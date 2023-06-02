@@ -1,5 +1,6 @@
 # YomiKazari
 YomiKazari: Elevate Your Reading Experience with Japanese-Ebooks (Pet-Project)
+
 YomiKazari （読み飾り）is an innovative ebook reader designed to immerse you in the captivating world of Japanese literature. With its seamless blend of functionality and aesthetics, YomiKazari transforms the act of reading into an enchanting and personalized journey.
 
 Featuring a sleek and intuitive interface, YomiKazari takes inspiration from many eBook readers I've used myself so far, just with a nudge towards Japanese. Immerse yourself in the beauty of minimalist aesthetics as you delve into the pages of your favorite Japanese novels, manga, and more.

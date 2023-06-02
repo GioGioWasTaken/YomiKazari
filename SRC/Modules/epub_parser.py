@@ -13,6 +13,7 @@ class EPUBParser: # Make a class, in order to keep OOP convetions.
     def extract_metadata(self):
         book = epub.read_epub(self.epub_path) # book object represents the .epub file and provides
         # access to its contents and metadata.
+
         metadata = {
             'title': book.title,
             'authors': book.get_metadata('DC', 'creator')[0][0],

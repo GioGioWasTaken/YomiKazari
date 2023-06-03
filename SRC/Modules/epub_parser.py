@@ -16,11 +16,36 @@ class EPUBParser: # Make a class, in order to keep OOP convetions.
 
         metadata = {
             'title': book.title,
-            'authors': book.get_metadata('DC', 'creator')[0][0],
-            'publication_date': book.get_metadata('DC', 'date')[0][0],
+            'authors': book.get_metadata('DC', 'creator'),
+            'publication_date': book.get_metadata('DC', 'date'),
             'cover_image': self._get_cover_image(book) # a method described below
             # Add more metadata attributes as needed
         }
+        print(f"Original Metadata: {metadata}")
+        # publication date errors
+
+        if not metadata.get('publication_date'):
+            # Handle the case where publication date is an empty list
+            # Assign a default value or handle it based on your requirements
+            metadata['publication_date'] = "Unknown"
+        else:
+            # Process the publication date
+            metadata['publication_date']=metadata['publication_date'][0]
+
+        # Author errors
+
+        while isinstance(metadata['authors'], (list, tuple)):
+            metadata['authors'] = metadata['authors'][0]
+            print(f"Cleaning authors: {metadata['authors']}")
+
+        if not isinstance(metadata['authors'], str):
+            print(type(metadata['authors']))
+            # Handle the case where authors are not a string
+            # Assign a default value or handle it based on your requirements
+            metadata['authors'] = "Unknown"
+        else:
+            pass
+        print(f"Processed Metadata: {metadata}")
         return metadata
 
     def retrieve_content(self):
@@ -55,13 +80,13 @@ class EPUBParser: # Make a class, in order to keep OOP convetions.
 
 
 # Example usage
-epub_file = r'C:\Users\USER1\Downloads\Bardugo_Leigh-_Crooked_Kingdom_Six_of_Crows_2.epub'
-parser = EPUBParser(epub_file)
+if __name__ == '__main__':
+    epub_file = r'' # insert link
+    parser = EPUBParser(epub_file)
 
-metadata = parser.extract_metadata()
-print(f'Metadata: {metadata}')
+    metadata = parser.extract_metadata()
+    print(f'Metadata: {metadata}')
 
-content = parser.retrieve_content()
-print(f'Content: {content}')
-
+    content = parser.retrieve_content()
+    print(f'Content: {content}')
 #TESTING SUCCESSFUL!

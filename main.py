@@ -15,3 +15,23 @@
 
 # Author: GioGioBestCat
 # Date: 2.06.2023
+from SRC.Modules import ebook_database
+from SRC.Modules.e_book_object import eBook
+
+if __name__ == '__main__':
+    # Perform any initialization or setup tasks here
+
+    # Create an instance of the EbookDatabase class
+    ebook_db = ebook_database.EbookDatabase('ebooks.db')
+
+    # Create the ebooks table if it doesn't exist
+    ebook_db.create_table()
+
+    # Insert ebook
+    epub_file1 = eBook(r'C:\Users\USER1\Downloads\Bardugo_Leigh_-_Six_of_Crows.epub')
+    ebook_db.insert_ebook(epub_file1)
+    # Delete an ebook
+    # ebook_db.delete_ebook('Book Title')
+
+
+

@@ -1,3 +1,4 @@
+# The GUI for YomiKazari!
 import sys
 from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QLineEdit, QHBoxLayout, QScrollArea, QLabel
 from PySide6.QtGui import QFont, QPixmap, QPalette, QColor, Qt

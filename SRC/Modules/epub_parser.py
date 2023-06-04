@@ -6,7 +6,7 @@ from ebooklib import epub
 from PIL import Image
 import io
 from bs4 import BeautifulSoup
-class EPUBParser: # Make a class, in order to keep OOP convetions.
+class EPUBParser: # Make a class, in order to keep OOP conventions.
     def __init__(self, epub_path):
         self.epub_path = epub_path
 

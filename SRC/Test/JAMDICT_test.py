@@ -16,6 +16,8 @@ def parse_entry(word):
     kanji_word=tmp_word.split()[1]
     # Extract definitions using regular expression pattern
     definitions = re.findall(r'\d+\.\s.+?(?=\s\d+\.|$)', parts[1])
+    if not(definitions):
+        definitions=parts[1]
     # this regular expression matches the numeric part, followed by a period, a space, and lazily matches any characters until either a space followed by a numeric part is encountered or the end of the string.
     difference = ''
     # The purpose of the difference variable is to display furigana on top of kanji
@@ -25,14 +27,13 @@ def parse_entry(word):
         for char in furi_word:
             if char not in kanji_word:
                 difference_list.append( char )
-        print( difference_list )
         for char in difference_list:
             difference += char
 
     return furi_word, kanji_word, definitions, difference
 
 
-furi_word, kanji_word, definitions, difference = parse_entry('食べる')
+furi_word, kanji_word, definitions, difference = parse_entry('五月蝿い')
 
 print(f"Furi Word: {furi_word}")
 print(f"Kanji Word: {kanji_word}")

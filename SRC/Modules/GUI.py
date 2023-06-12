@@ -1,13 +1,11 @@
 # The GUI for YomiKazari!
 import sys
 import os
-import time
-
 from controller import open_file_explorer_epub
 from ebook_database import EbookDatabase
 from SRC.Modules.e_book_object import eBook
-from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QLineEdit, QHBoxLayout, QScrollArea, QLabel
-from PySide6.QtGui import QFont, QPixmap, QPalette, QColor, Qt
+from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QLineEdit, QHBoxLayout, QScrollArea, QLabel, QButtonGroup
+from PySide6.QtGui import QFont, QPixmap, Qt, QIcon
 # get path to resources to load later.
 current_file_dir = os.path.dirname(os.path.abspath(__file__))
 yomi_kazari_dir = os.path.dirname(os.path.dirname(current_file_dir))
@@ -171,6 +169,9 @@ class MainWindow(QMainWindow):
         covers_layout=QHBoxLayout() # create a layout for the cover grid
         covers_widget=QWidget()
         covers_widget.setLayout(covers_layout)
+
+
+
         # Add the top bar widget and the scroll area to the main content layout
         main_content_layout.addWidget(top_bar_widget)
         main_content_layout.addWidget(scroll_area)
@@ -179,8 +180,12 @@ class MainWindow(QMainWindow):
         main_content_widget.setFont(font)
         main_content_widget.setStyleSheet("color: white;")
 
+        # Create a button group
+        button_group = QButtonGroup()
+        button_group.setExclusive( True )
+        self.button_group=button_group
         # Add the covers upon init.
-        covers_layout = self.display_books_bookshelf( covers_layout )
+        covers_layout = self.display_books_bookshelf( covers_layout, button_group )
         covers_widget.setLayout( covers_layout )
         main_content_widget.layout().update()
 
@@ -190,10 +195,11 @@ class MainWindow(QMainWindow):
         # Add button functionality:
 
         add_book.clicked.connect( open_file_explorer_epub )
-        add_book.clicked.connect( lambda: self.display_books_bookshelf( covers_layout ) )
+        add_book.clicked.connect( lambda: self.display_books_bookshelf( covers_layout, button_group) )
         covers_widget.setLayout( covers_layout )
         main_content_widget.layout().update()
-    def display_books_bookshelf(self, covers_layout):
+
+    def display_books_bookshelf(self, covers_layout,button_group):
         # Clear the previous covers
         while covers_layout.count():
             item = covers_layout.takeAt( 0 )
@@ -203,24 +209,42 @@ class MainWindow(QMainWindow):
 
         # Read from the current database file
         ebook_db = EbookDatabase( 'ebooks.db' )
-        books = ebook_db.get_books()
+        books = ebook_db.get_books() # a list of book items.
+        # Each book item has a set list of attributes. See ebook_database for more.
 
         # Iterate over the books and create book cover labels within the bookshelves
         if books:
             for book in books:
                 # Create a label for the book cover
+                covers_button = QPushButton()
+                covers_button.setStyleSheet( "background-color: transparent; border: none;" )
                 book_cover_label = QLabel()
                 pixmap = QPixmap()
                 pixmap.loadFromData( book.cover )  # Load the image data as QPixmap
                 book_cover_label.setPixmap( pixmap )
                 book_cover_label.setScaledContents( True )
                 book_cover_label.setFixedSize( 150, 200 )
-
+                covers_button.setIcon( QIcon( pixmap ) )  # Set the pixmap as an icon
+                covers_button.setIconSize( book_cover_label.size() )
+                covers_button.setFixedSize(150,200)
                 # Add the book cover label to the corresponding bookshelf layout
-                covers_layout.addWidget( book_cover_label )
-                print(f"Books' cover image in bytes: {book.cover}")
-        return covers_layout
+                covers_layout.addWidget( covers_button )
 
+                # Add the button to the button group
+                button_group.addButton( covers_button )
+
+        # Connect the buttonClicked signal to the handle_button_selection method
+        button_group.buttonClicked.connect( self.handle_button_selection )
+
+        return covers_layout
+    def handle_button_selection(self, button):
+        # Set the active button's style sheet
+        button.setStyleSheet("background-color: transparent; border: 2px solid blue;")
+
+        # Reset the style sheet for other buttons
+        for other_button in self.button_group.buttons():
+            if other_button != button:
+                other_button.setStyleSheet("background-color: transparent; border: none;")
 
 
 if __name__ == "__main__":

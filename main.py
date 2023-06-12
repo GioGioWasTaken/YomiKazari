@@ -28,7 +28,7 @@ if __name__ == '__main__':
     ebook_db.create_table()
 
     # Insert ebook
-    epub_file1 = eBook(r'C:\Users\USER1\Downloads\Bardugo_Leigh_-_Six_of_Crows.epub')
+    epub_file1 = eBook(r'C:\Users\iyars\PycharmProjects\YomiKazari\SRC\Resources\Bardugo, Leigh - Six of Crows.epub')
     ebook_db.insert_ebook(epub_file1)
     # Delete an ebook
     # ebook_db.delete_ebook('Book Title')

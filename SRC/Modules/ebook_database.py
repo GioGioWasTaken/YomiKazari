@@ -1,4 +1,5 @@
 from SRC.Modules.e_book_object import eBook
+from SRC.Modules.e_book_object import eBook_in_db
 import sqlite3
 class EbookDatabase:
     def __init__(self, db_file):
@@ -15,27 +16,31 @@ class EbookDatabase:
                     author TEXT,
                     publication_date TEXT,
                     content TEXT,
-                    cover_image BLOB
+                    cover_image TEXT
                 )
             '''
             cursor.execute(ebooks_database)
             conn.commit()
 
     def insert_ebook(self, ebook):
-        with sqlite3.connect(self.db_file) as conn:
+        with sqlite3.connect( self.db_file ) as conn:
             cursor = conn.cursor()
 
             sql = '''
                 INSERT INTO ebooks (title, author, publication_date, content, cover_image)
                 VALUES (?, ?, ?, ?, ?)
             '''
-            values = (ebook.title, ebook.author, ebook.date, ebook.content, ebook.cover)
+            # Read the image file as bytes
+            with open( ebook.cover, "rb" ) as image_file:
+                image_data = image_file.read()
+
+            values = (ebook.title, ebook.author, ebook.date, ebook.content, image_data)
             try:
-                cursor.execute(sql, values)
+                cursor.execute( sql, values )
                 conn.commit()
             except sqlite3.InterfaceError: # temporary code to handle metadata exceptions
                 print("Exception detected: an error with one of the metadata attributes has most likely occurred.")
-                values = (str(ebook.title), str(ebook.author), str(ebook.date), ebook.content, ebook.cover)
+                values = (str(ebook.title), str(ebook.author), str(ebook.date), ebook.content, image_data)
                 cursor.execute(sql, values)
                 conn.commit()
     def delete_ebook(self, title):
@@ -48,7 +53,25 @@ class EbookDatabase:
             cursor.execute(sql, (title,))
             conn.commit()
 
+    def get_books(self):
+        books=[]
+        # Connect to the database
+        conn = sqlite3.connect(self.db_file)
+        cursor = conn.cursor()
 
+        # Execute a SELECT query to retrieve the books
+        cursor.execute("SELECT * FROM ebooks")
+        rows = cursor.fetchall()
+
+        # Iterate over the retrieved rows and create book objects
+        for row in rows:
+            book = eBook_in_db(row[0], row[1], row[2],row[3],row[4],row[5])
+            books.append(book)
+
+        # Close the database connection
+        conn.close()
+
+        return books
 # Example usage
 if __name__ == '__main__':
     ebook_db = EbookDatabase('ebooks.db')

@@ -10,7 +10,14 @@ class eBook:
         self.title = self.metadata.get('title')
         self.cover = self.metadata.get('cover_image')
 
-
+class eBook_in_db:
+    def __init__(self,id,title,author,publication_date,content,cover):
+        self.id=id
+        self.title=title
+        self.author=author
+        self.publication_date=publication_date
+        self.content=content
+        self.cover=cover
 # Example usage
 if __name__ == '__main__':
   epub_file = r''  # Enter the path to the file

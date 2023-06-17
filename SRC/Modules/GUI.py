@@ -1,15 +1,31 @@
 # The GUI for YomiKazari!
 import sys
 import os
+from collections import Counter
 from controller import open_file_explorer_epub
 from ebook_database import EbookDatabase
 from SRC.Modules.e_book_object import eBook
-from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QLineEdit, QHBoxLayout, QScrollArea, QLabel, QButtonGroup
-from PySide6.QtGui import QFont, QPixmap, Qt, QIcon
+from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QLineEdit, QHBoxLayout, QScrollArea, QLabel, QButtonGroup,QGridLayout
+from PySide6.QtGui import QFont, QPixmap, Qt, QIcon, QPainter
 # get path to resources to load later.
 current_file_dir = os.path.dirname(os.path.abspath(__file__))
 yomi_kazari_dir = os.path.dirname(os.path.dirname(current_file_dir))
 resources=os.path.join(yomi_kazari_dir,'SRC','Resources')
+
+class BookshelfWidget(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setMinimumSize(150, 200)
+        self.setLayout(QHBoxLayout())  # Set a QVBoxLayout for the bookshelf widget
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        pixmap = QPixmap(os.path.join(resources, 'woodshelf_model V3.png'))
+        painter.drawPixmap(self.rect(), pixmap)
+
+
+
+
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -148,23 +164,7 @@ class MainWindow(QMainWindow):
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)  # Allow the scroll area to resize the widget
         scroll_area.setStyleSheet("QScrollArea { background-color: transparent; border: none; }")  # Set transparent background and no border
-
-        # Create the container widget for bookshelves
-        bookshelves_widget = QWidget()
-        bookshelves_layout = QVBoxLayout()
-        bookshelves_layout.setSpacing(30)
-        bookshelves_layout.setContentsMargins(0, 0, 0, 0)  # Remove any margins
-        bookshelves_widget.setLayout(bookshelves_layout)
-        # Add bookshelves to the container widget
-        authors_amount = 10  # each bookshelf will correspond to an author. If there are 10 authors, there'll be 10 bookshelves
-        for _ in range(authors_amount):
-            bookshelf_image = QLabel()
-            bookshelf_path = os.path.join(resources,'woodshelf_model V3.png')
-            pixmap = QPixmap(bookshelf_path)
-            bookshelf_image.setPixmap(pixmap)
-            bookshelves_layout.addWidget(bookshelf_image)
-        # Set the container widget as the content of the scroll area
-        scroll_area.setWidget(bookshelves_widget)
+        self.scroll_area=scroll_area
 
         covers_layout=QHBoxLayout() # create a layout for the cover grid
         covers_widget=QWidget()
@@ -185,7 +185,7 @@ class MainWindow(QMainWindow):
         button_group.setExclusive( True )
         self.button_group=button_group
         # Add the covers upon init.
-        covers_layout = self.display_books_bookshelf( covers_layout, button_group )
+        covers_layout = self.display_books_bookshelf(button_group )
         covers_widget.setLayout( covers_layout )
         main_content_widget.layout().update()
 
@@ -195,56 +195,95 @@ class MainWindow(QMainWindow):
         # Add button functionality:
 
         add_book.clicked.connect( open_file_explorer_epub )
-        add_book.clicked.connect( lambda: self.display_books_bookshelf( covers_layout, button_group) )
+        add_book.clicked.connect( lambda: self.display_books_bookshelf(button_group) )
         covers_widget.setLayout( covers_layout )
         main_content_widget.layout().update()
-
-    def display_books_bookshelf(self, covers_layout,button_group):
+    def display_books_bookshelf(self,button_group):
         # Clear the previous covers
-        while covers_layout.count():
-            item = covers_layout.takeAt( 0 )
-            widget = item.widget()
-            if widget:
-                widget.deleteLater()
+        # while self.scroll_area.widget().layout().count():
+        #     item = self.scroll_area.widget().layout().takeAt(0)
+        #     widget = item.widget()
+        #     if widget:
+        #         widget.deleteLater()
 
         # Read from the current database file
-        ebook_db = EbookDatabase( 'ebooks.db' )
-        books = ebook_db.get_books() # a list of book items.
-        # Each book item has a set list of attributes. See ebook_database for more.
+        ebook_db = EbookDatabase('ebooks.db')
+        books = ebook_db.get_books()
 
-        # Iterate over the books and create book cover labels within the bookshelves
-        if books:
-            for book in books:
-                # Create a label for the book cover
-                covers_button = QPushButton()
-                covers_button.setStyleSheet( "background-color: transparent; border: none;" )
-                book_cover_label = QLabel()
-                pixmap = QPixmap()
-                pixmap.loadFromData( book.cover )  # Load the image data as QPixmap
-                book_cover_label.setPixmap( pixmap )
-                book_cover_label.setScaledContents( True )
-                book_cover_label.setFixedSize( 150, 200 )
-                covers_button.setIcon( QIcon( pixmap ) )  # Set the pixmap as an icon
-                covers_button.setIconSize( book_cover_label.size() )
-                covers_button.setFixedSize(150,200)
-                # Add the book cover label to the corresponding bookshelf layout
-                covers_layout.addWidget( covers_button )
+        # Create a list of all authors
+        authors = [book.author for book in books]
 
-                # Add the button to the button group
-                button_group.addButton( covers_button )
+        # Create author bookshelves and count the number of books per author
+        author_counts = Counter(authors)
+        unique_authors = list(author_counts.keys())
 
-        # Connect the buttonClicked signal to the handle_button_selection method
-        button_group.buttonClicked.connect( self.handle_button_selection )
+        # Create bookshelves for each unique author
+        bookshelves = self.create_author_bookshelves(unique_authors)
 
-        return covers_layout
+        # Iterate over the books and add book covers to the corresponding author bookshelf
+        for book in books:
+            author = book.author
+            book_cover_label = QLabel()
+            pixmap = QPixmap()
+            pixmap.loadFromData(book.cover)
+            book_cover_label.setPixmap(pixmap)
+            book_cover_label.setScaledContents(True)
+            book_cover_label.setFixedSize(150, 200)
+
+            # Find the corresponding bookshelf for the author
+            bookshelf_layout = bookshelves[author]
+
+            # Create a button for the book cover
+            cover_button = QPushButton()
+            cover_button.setStyleSheet("background-color: transparent; border: none;")
+            cover_button.setIcon(QIcon(pixmap))
+            cover_button.setIconSize(book_cover_label.size())
+            cover_button.setFixedSize(150, 200)
+
+            # Add the book cover button to the bookshelf widget
+            bookshelf_widget = bookshelf_layout.itemAt(0).widget()
+            bookshelf_widget.layout().addWidget(cover_button)
+            button_group.addButton(cover_button)
+            # Connect the buttonClicked signal to the handle_button_selection method
+            button_group.buttonClicked.connect(self.handle_button_selection)
+
+        # Add the bookshelves to the covers layout
+        covers_layout = QVBoxLayout()
+        for bookshelf_layout in bookshelves.values():
+            covers_layout.addLayout(bookshelf_layout)
+
+        # Create a widget to hold the covers layout
+        covers_widget = QWidget()
+        covers_widget.setLayout(covers_layout)
+
+        # Set the widget as the scroll area's widget
+        self.scroll_area.setWidget(covers_widget)
+
     def handle_button_selection(self, button):
         # Set the active button's style sheet
-        button.setStyleSheet("background-color: transparent; border: 2px solid blue;")
+        button.setStyleSheet("background-color: transparent; border: 2px solid red;")
 
         # Reset the style sheet for other buttons
         for other_button in self.button_group.buttons():
             if other_button != button:
                 other_button.setStyleSheet("background-color: transparent; border: none;")
+    def create_author_bookshelves(self, authors):
+        # Create a dictionary to store bookshelves for each author
+        bookshelves = {}
+        font = QFont("Noto Sans", 15)
+        # Create a bookshelf layout for each unique author
+        for author in authors:
+            bookshelf_layout = QVBoxLayout()
+            author_label = QLabel(author)
+            author_label.setFont(font)
+            # Create a bookshelf widget
+            bookshelf_widget = BookshelfWidget()
+            bookshelf_layout.addWidget(bookshelf_widget)
+            bookshelf_layout.addWidget(author_label)
+            # Store the bookshelf layout in the dictionary
+            bookshelves[author] = bookshelf_layout
+
+        return bookshelves
 
 
 if __name__ == "__main__":

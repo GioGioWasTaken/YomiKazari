@@ -5,12 +5,27 @@ from collections import Counter
 from controller import open_file_explorer_epub
 from ebook_database import EbookDatabase
 from SRC.Modules.e_book_object import eBook
-from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QLineEdit, QHBoxLayout, QScrollArea, QLabel, QButtonGroup, QGridLayout
-from PySide6.QtGui import QFont, QPixmap, Qt, QIcon
+from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QLineEdit, QHBoxLayout, QScrollArea, QLabel, QButtonGroup,QGridLayout
+from PySide6.QtGui import QFont, QPixmap, Qt, QIcon, QPainter
 # get path to resources to load later.
 current_file_dir = os.path.dirname(os.path.abspath(__file__))
 yomi_kazari_dir = os.path.dirname(os.path.dirname(current_file_dir))
 resources=os.path.join(yomi_kazari_dir,'SRC','Resources')
+
+class BookshelfWidget(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setMinimumSize(150, 200)
+        self.setLayout(QHBoxLayout())  # Set a QVBoxLayout for the bookshelf widget
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        pixmap = QPixmap(os.path.join(resources, 'woodshelf_model V3.png'))
+        painter.drawPixmap(self.rect(), pixmap)
+
+
+
+
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -183,15 +198,14 @@ class MainWindow(QMainWindow):
         add_book.clicked.connect( lambda: self.display_books_bookshelf() )
         covers_widget.setLayout( covers_layout )
         main_content_widget.layout().update()
-
     def display_books_bookshelf(self):
         # Clear the previous covers
-        #while self.scroll_area.widget().layout().count():
-        #    item = self.scroll_area.widget().layout().takeAt(0)
-        #    widget = item.widget()
-        #    if widget:
-        #        widget.deleteLater()
-#
+        # while self.scroll_area.widget().layout().count():
+        #     item = self.scroll_area.widget().layout().takeAt(0)
+        #     widget = item.widget()
+        #     if widget:
+        #         widget.deleteLater()
+
         # Read from the current database file
         ebook_db = EbookDatabase('ebooks.db')
         books = ebook_db.get_books()
@@ -226,8 +240,9 @@ class MainWindow(QMainWindow):
             cover_button.setIconSize(book_cover_label.size())
             cover_button.setFixedSize(150, 200)
 
-            # Add the book cover button to the bookshelf layout
-            bookshelf_layout.addWidget(cover_button)
+            # Add the book cover button to the bookshelf widget
+            bookshelf_widget = bookshelf_layout.itemAt(0).widget()
+            bookshelf_widget.layout().addWidget(cover_button)
 
         # Add the bookshelves to the covers layout
         covers_layout = QVBoxLayout()
@@ -241,36 +256,19 @@ class MainWindow(QMainWindow):
         # Set the widget as the scroll area's widget
         self.scroll_area.setWidget(covers_widget)
 
-
-
     def create_author_bookshelves(self, authors):
         # Create a dictionary to store bookshelves for each author
         bookshelves = {}
-
+        font = QFont("Noto Sans", 15)
         # Create a bookshelf layout for each unique author
         for author in authors:
             bookshelf_layout = QVBoxLayout()
-            bookshelf_layout.setSpacing( 15 )
-            bookshelf_layout.setContentsMargins( 0, 0, 0, 0 )
-
-            # Create a label for the author's name
-            author_label = QLabel( author )
-            bookshelf_layout.addWidget( author_label )
-
-            # Create a horizontal layout to center the book covers
-            cover_layout = QGridLayout ()
-            # Create a label for the bookshelf image
-            bookshelf_image_label = QLabel()
-            bookshelf_path = os.path.join( resources, 'woodshelf_model V3.png' )
-            pixmap = QPixmap( bookshelf_path )
-            bookshelf_image_label.setPixmap( pixmap )
-
-            # Add the bookshelf image label to the cover layout
-            cover_layout.addWidget( bookshelf_image_label )
-
-            # Add the cover layout to the bookshelf layout
-            bookshelf_layout.addLayout( cover_layout )
-
+            author_label = QLabel(author)
+            author_label.setFont(font)
+            # Create a bookshelf widget
+            bookshelf_widget = BookshelfWidget()
+            bookshelf_layout.addWidget(bookshelf_widget)
+            bookshelf_layout.addWidget(author_label)
             # Store the bookshelf layout in the dictionary
             bookshelves[author] = bookshelf_layout
 

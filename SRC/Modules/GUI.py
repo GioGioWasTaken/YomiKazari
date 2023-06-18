@@ -5,7 +5,7 @@ from collections import Counter
 from controller import open_file_explorer_epub
 from ebook_database import EbookDatabase
 from SRC.Modules.e_book_object import eBook
-from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QLineEdit, QHBoxLayout, QScrollArea, QLabel, QButtonGroup,QGridLayout
+from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QLineEdit, QHBoxLayout, QScrollArea, QLabel, QButtonGroup,QDialog
 from PySide6.QtGui import QFont, QPixmap, Qt, QIcon, QPainter
 # get path to resources to load later.
 current_file_dir = os.path.dirname(os.path.abspath(__file__))
@@ -33,6 +33,13 @@ class MainWindow(QMainWindow):
         # GENERAL SETTINGS
         font = QFont("Noto Sans", 20)
         self.setStyleSheet("background-color: #222436;")
+
+        # set up a books attribute for future use.
+        ebook_db = EbookDatabase('ebooks.db')
+        books = ebook_db.get_books()
+        self.books = books
+
+
 
         # Create the top bar widget
         top_bar_widget = QWidget()
@@ -199,12 +206,6 @@ class MainWindow(QMainWindow):
         covers_widget.setLayout( covers_layout )
         main_content_widget.layout().update()
     def display_books_bookshelf(self,button_group):
-        # Clear the previous covers
-        # while self.scroll_area.widget().layout().count():
-        #     item = self.scroll_area.widget().layout().takeAt(0)
-        #     widget = item.widget()
-        #     if widget:
-        #         widget.deleteLater()
 
         # Read from the current database file
         ebook_db = EbookDatabase('ebooks.db')

@@ -6,7 +6,7 @@ class eBook:
         self.metadata = parser.extract_metadata()
         self.content = parser.retrieve_content()
         self.author=self.metadata.get('authors')
-        self.date = self.metadata.get('publication_date')
+        self.published = self.metadata.get('publication_date')
         self.title = self.metadata.get('title')
         self.cover = self.metadata.get('cover_image')
 

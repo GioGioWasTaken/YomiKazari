@@ -40,7 +40,7 @@ class EbookDatabase:
                 conn.commit()
             except sqlite3.InterfaceError: # temporary code to handle metadata exceptions
                 print("Exception detected: an error with one of the metadata attributes has most likely occurred.")
-                values = (str(ebook.title), str(ebook.author), str(ebook.date), ebook.content, image_data)
+                values = (str(ebook.title), str(ebook.author), str(ebook.published), ebook.content, image_data)
                 cursor.execute(sql, values)
                 conn.commit()
     def delete_ebook(self, title):
@@ -76,5 +76,5 @@ class EbookDatabase:
 if __name__ == '__main__':
     ebook_db = EbookDatabase('ebooks.db')
     ebook_db.create_table()
-    epub_file = eBook(r'path_to_epub')# Insert the path to your EPUB file
+    epub_file = eBook(r'path_to_epub') # Insert the path to your EPUB file
     ebook_db.insert_ebook(epub_file)

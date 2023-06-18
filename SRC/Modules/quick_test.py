@@ -30,7 +30,7 @@ class BookPopup(QDialog):
         cover_pixmap.loadFromData(book.cover)  # Assuming book.cover is in bytes
         cover_label.setScaledContents(True)
         cover_label.setPixmap(cover_pixmap)
-        cover_label.setFixedSize(150,200)
+        cover_label.setFixedSize(250,250)
         layout.addWidget(cover_label)
 
         # Add other book details like author, publication time, and synopsis to the layout
@@ -42,11 +42,14 @@ class BookPopup(QDialog):
         published_label.setFont(font)
         layout.addWidget(published_label)
 
+
         # the synopsis isn't available in the metadata, and will be acquired in the future using methods like webscraping.
-        # Adjust the position of the popup
+        # Adjust the position and size of the popup
         screen_geometry = QApplication.primaryScreen().availableGeometry()
-        self.setGeometry(screen_geometry.width() - self.width() - 20, 20, self.width(), self.height())
+        desired_width = screen_geometry.width() // 7
+        self.setGeometry(screen_geometry.width() - desired_width - 20, 0, desired_width, screen_geometry.height())
         self.show()
+
 
 
 class BookshelfWidget(QWidget):
@@ -244,6 +247,9 @@ class MainWindow(QMainWindow):
         add_book.clicked.connect( lambda: self.display_books_bookshelf(button_group) )
         covers_widget.setLayout( covers_layout )
         main_content_widget.layout().update()
+
+        self.active_popup = None # init value to keep track of the book description popup.
+
     def display_books_bookshelf(self,button_group):
 
 
@@ -306,14 +312,19 @@ class MainWindow(QMainWindow):
         for other_button in self.button_group.buttons():
             if other_button != button:
                 other_button.setStyleSheet("background-color: transparent; border: none;")
-
+        # Close the current book popup if it's open
+        if self.active_popup:
+            self.active_popup.close()
+            print("popup closed")
 
         # Show the book popup
         book = self.get_book_from_button(button)
         if book:
             popup = BookPopup(book)
-            popup.exec()
-
+            self.active_popup = popup
+            popup.exec() # ** WARNING: There seems to be a bug that opens each popup x amount of times
+            # x is equal to the amount of books currently present in library. This bug is currently irrelvant
+            # and will most likely continue to be irrelevant, as the popup will be integrated into the window, and not as an element by itself.
 
     def get_book_from_button(self, button):
         # Retrieve the book associated with the button

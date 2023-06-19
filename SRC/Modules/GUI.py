@@ -116,12 +116,12 @@ class MainWindow(QMainWindow):
         add_book_layout = QVBoxLayout()
 
         add_book = QPushButton()
-        add_book_path = os.path.join(resources,'add_book_asset.png')
+        add_book_path = os.path.join(resources,'add_book_pixel.png')
         add_book_pixmap = QPixmap(add_book_path)
         add_book.setIcon(add_book_pixmap)
         add_book.setIconSize(add_book_pixmap.size())
         add_book_layout.addWidget(add_book)
-
+        add_book.setStyleSheet("background-color: transparent; border: none;")
         add_book_text = QLabel("Add book")
         add_book_text.setFont(font)
         add_book_layout.addWidget(add_book_text)
@@ -142,12 +142,12 @@ class MainWindow(QMainWindow):
         add_folder_layout = QVBoxLayout()
 
         add_folder = QPushButton()
-        add_folder_path = os.path.join(resources,'folder_asset.png')
+        add_folder_path = os.path.join(resources,'folder_icon_pixel.png')
         add_folder_pixmap = QPixmap(add_folder_path)
         add_folder.setIcon(add_folder_pixmap)
         add_folder.setIconSize(add_folder_pixmap.size())
         add_folder_layout.addWidget(add_folder)
-
+        add_folder.setStyleSheet("background-color: transparent; border: none;")
         add_folder_text = QLabel("Add folder")
         add_folder_text.setFont(font)
         add_folder_layout.addWidget(add_folder_text)
@@ -167,12 +167,12 @@ class MainWindow(QMainWindow):
         export_book_layout = QVBoxLayout()
 
         export_book = QPushButton()
-        export_book_path = os.path.join(resources,'export_book_icon.png')
+        export_book_path = os.path.join(resources,'export_book_pixel.png')
         export_book_pixmap = QPixmap(export_book_path)
         export_book.setIcon(export_book_pixmap)
         export_book.setIconSize(export_book_pixmap.size())
         export_book_layout.addWidget(export_book)
-
+        export_book.setStyleSheet("background-color: transparent; border: none;")
         export_book_text = QLabel("Export book")
         export_book_text.setFont(font)
         export_book_layout.addWidget(export_book_text)
@@ -192,12 +192,12 @@ class MainWindow(QMainWindow):
         export_folder_layout = QVBoxLayout()
 
         export_folder = QPushButton()
-        export_folder_path = os.path.join(resources,'export_folder_icon.png')
+        export_folder_path = os.path.join(resources,'export_folder_pixel.png')
         export_folder_pixmap = QPixmap(export_folder_path)
         export_folder.setIcon(export_folder_pixmap)
         export_folder.setIconSize(export_folder_pixmap.size())
         export_folder_layout.addWidget(export_folder)
-
+        export_folder.setStyleSheet("background-color: transparent; border: none;")
         export_folder_text = QLabel("Export folder")
         export_folder_text.setFont(font)
         export_folder_layout.addWidget(export_folder_text)
@@ -309,7 +309,7 @@ class MainWindow(QMainWindow):
             cover_button.setFixedSize(150, 200)
 
             # Add the book cover button to the bookshelf widget
-            bookshelf_widget = bookshelf_layout.itemAt(0).widget()
+            bookshelf_widget = bookshelf_layout.itemAt(1).widget()
             bookshelf_widget.layout().addWidget(cover_button)
             bookshelf_widget.layout().setAlignment(Qt.AlignmentFlag.AlignLeft)
             button_group.addButton(cover_button)
@@ -360,13 +360,20 @@ class MainWindow(QMainWindow):
         font = QFont("Noto Sans", 15)
         # Create a bookshelf layout for each unique author
         for author in authors:
+            # Create a bookshelf layout for each unique author
             bookshelf_layout = QVBoxLayout()
-            author_label = QLabel(author)
-            author_label.setFont(font)
+            author_label = QLabel( author )
+            author_label.setFont( font )
+
             # Create a bookshelf widget
             bookshelf_widget = BookshelfWidget()
-            bookshelf_layout.addWidget(bookshelf_widget)
-            bookshelf_layout.addWidget(author_label)
+
+            # Set the layout for the bookshelf widget
+            bookshelf_widget.setLayout( bookshelf_layout )
+
+            bookshelf_layout.addWidget( author_label )
+            bookshelf_layout.addWidget( bookshelf_widget )
+
             # Store the bookshelf layout in the dictionary
             bookshelves[author] = bookshelf_layout
 

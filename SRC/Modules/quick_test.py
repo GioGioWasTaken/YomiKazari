@@ -24,17 +24,34 @@ class BookPopup(QWidget):
         font = QFont("Noto Sans", 20)
         self.setStyleSheet("background-color: #222436;color: white;")
 
+        #create a dedicated layout & container specifically for the cover & open book button
+        container=QWidget()
+        layout2=QHBoxLayout()
+
+        open_book=QPushButton()
+        open_book_path = os.path.join(resources,'arrow_icon64.png')
+        open_book_pixmap = QPixmap(open_book_path)
+        open_book.setIcon(open_book_pixmap)
+        open_book.setIconSize(open_book_pixmap.size())
+        open_book.setFixedSize(150,200)
+        open_book.setStyleSheet("background-color: transparent; border: none;")
+
         # Create and add the widgets to the layout
         cover_label = QLabel()
         cover_pixmap = QPixmap()
         cover_pixmap.loadFromData(book.cover)  # Assuming book.cover is in bytes
         cover_label.setScaledContents(True)
         cover_label.setPixmap(cover_pixmap)
-        cover_label.setFixedSize(200,200)
-        layout.addWidget(cover_label)
+        cover_label.setFixedSize(150,200)
+
+        layout2.addWidget(cover_label)
+        layout2.addWidget(open_book)
+        layout2.setSpacing( 10 )
+        layout2.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        container.setLayout(layout2)
+        layout.addWidget(container)
 
         # Add other book details like author, publication time, and synopsis to the layout
-
         book_title=QLabel('Title: '+ book.title)
         book_title.setFont(font)
         layout.addWidget(book_title)
@@ -99,12 +116,12 @@ class MainWindow(QMainWindow):
         add_book_layout = QVBoxLayout()
 
         add_book = QPushButton()
-        add_book_path = os.path.join(resources,'add_book_asset.png')
+        add_book_path = os.path.join(resources,'add_book_pixel.png')
         add_book_pixmap = QPixmap(add_book_path)
         add_book.setIcon(add_book_pixmap)
         add_book.setIconSize(add_book_pixmap.size())
         add_book_layout.addWidget(add_book)
-
+        add_book.setStyleSheet("background-color: transparent; border: none;")
         add_book_text = QLabel("Add book")
         add_book_text.setFont(font)
         add_book_layout.addWidget(add_book_text)
@@ -125,12 +142,12 @@ class MainWindow(QMainWindow):
         add_folder_layout = QVBoxLayout()
 
         add_folder = QPushButton()
-        add_folder_path = os.path.join(resources,'folder_asset.png')
+        add_folder_path = os.path.join(resources,'folder_icon_pixel.png')
         add_folder_pixmap = QPixmap(add_folder_path)
         add_folder.setIcon(add_folder_pixmap)
         add_folder.setIconSize(add_folder_pixmap.size())
         add_folder_layout.addWidget(add_folder)
-
+        add_folder.setStyleSheet("background-color: transparent; border: none;")
         add_folder_text = QLabel("Add folder")
         add_folder_text.setFont(font)
         add_folder_layout.addWidget(add_folder_text)
@@ -150,12 +167,12 @@ class MainWindow(QMainWindow):
         export_book_layout = QVBoxLayout()
 
         export_book = QPushButton()
-        export_book_path = os.path.join(resources,'export_book_icon.png')
+        export_book_path = os.path.join(resources,'export_book_pixel.png')
         export_book_pixmap = QPixmap(export_book_path)
         export_book.setIcon(export_book_pixmap)
         export_book.setIconSize(export_book_pixmap.size())
         export_book_layout.addWidget(export_book)
-
+        export_book.setStyleSheet("background-color: transparent; border: none;")
         export_book_text = QLabel("Export book")
         export_book_text.setFont(font)
         export_book_layout.addWidget(export_book_text)
@@ -175,12 +192,12 @@ class MainWindow(QMainWindow):
         export_folder_layout = QVBoxLayout()
 
         export_folder = QPushButton()
-        export_folder_path = os.path.join(resources,'export_folder_icon.png')
+        export_folder_path = os.path.join(resources,'export_folder_pixel.png')
         export_folder_pixmap = QPixmap(export_folder_path)
         export_folder.setIcon(export_folder_pixmap)
         export_folder.setIconSize(export_folder_pixmap.size())
         export_folder_layout.addWidget(export_folder)
-
+        export_folder.setStyleSheet("background-color: transparent; border: none;")
         export_folder_text = QLabel("Export folder")
         export_folder_text.setFont(font)
         export_folder_layout.addWidget(export_folder_text)
@@ -251,9 +268,7 @@ class MainWindow(QMainWindow):
         # Add button functionality:
 
         add_book.clicked.connect( open_file_explorer_epub )
-        add_book.clicked.connect(lambda: (print("Books should have refreshed upon click"), self.display_books_bookshelf(button_group)))
-        covers_widget.setLayout( covers_layout )
-        main_content_widget.layout().update()
+        add_book.clicked.connect(lambda: (print("Books should have refreshed upon click"), self.display_books_bookshelf(button_group), main_content_widget.layout().update(),covers_widget.setLayout( covers_layout )))
 
         self.active_popup = None # init value to keep track of the book description popup.
 
@@ -294,13 +309,14 @@ class MainWindow(QMainWindow):
             cover_button.setFixedSize(150, 200)
 
             # Add the book cover button to the bookshelf widget
-            bookshelf_widget = bookshelf_layout.itemAt(0).widget()
+            bookshelf_widget = bookshelf_layout.itemAt(1).widget()
             bookshelf_widget.layout().addWidget(cover_button)
+            bookshelf_widget.layout().setAlignment(Qt.AlignmentFlag.AlignLeft)
             button_group.addButton(cover_button)
             self.book_button_map[cover_button]=book
         # Connect the buttonClicked signal to the handle_button_selection method
         button_group.buttonClicked.connect(self.handle_button_selection)
-        print(self.book_button_map)
+        #print(self.book_button_map)
         # Add the bookshelves to the covers layout
         covers_layout = QVBoxLayout()
         for bookshelf_layout in bookshelves.values():
@@ -344,13 +360,20 @@ class MainWindow(QMainWindow):
         font = QFont("Noto Sans", 15)
         # Create a bookshelf layout for each unique author
         for author in authors:
+            # Create a bookshelf layout for each unique author
             bookshelf_layout = QVBoxLayout()
-            author_label = QLabel(author)
-            author_label.setFont(font)
+            author_label = QLabel( author )
+            author_label.setFont( font )
+
             # Create a bookshelf widget
             bookshelf_widget = BookshelfWidget()
-            bookshelf_layout.addWidget(bookshelf_widget)
-            bookshelf_layout.addWidget(author_label)
+
+            # Set the layout for the bookshelf widget
+            bookshelf_widget.setLayout( bookshelf_layout )
+
+            bookshelf_layout.addWidget( author_label )
+            bookshelf_layout.addWidget( bookshelf_widget )
+
             # Store the bookshelf layout in the dictionary
             bookshelves[author] = bookshelf_layout
 

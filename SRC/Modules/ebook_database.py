@@ -35,7 +35,10 @@ class EbookDatabase:
             if ebook.cover:
                 with open( ebook.cover, "rb" ) as image_file:
                     image_data = image_file.read()
-
+            else:
+                image_link=r'C:\Users\iyars\PycharmProjects\YomiKazari\SRC\Resources\unknown_author_cover.jpg'
+                with open (image_link, "rb") as image_file:
+                    image_data=image_file.read()
             values = (ebook.title, ebook.author, ebook.published, ebook.content, image_data)
             try:
                 cursor.execute( sql, values )

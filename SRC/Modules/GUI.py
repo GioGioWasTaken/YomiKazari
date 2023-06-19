@@ -1,6 +1,7 @@
 # The GUI for YomiKazari!
 import sys
 import os
+import time
 from collections import Counter
 from controller import open_file_explorer_epub
 from ebook_database import EbookDatabase
@@ -11,6 +12,67 @@ from PySide6.QtGui import QFont, QPixmap, Qt, QIcon, QPainter
 current_file_dir = os.path.dirname(os.path.abspath(__file__))
 yomi_kazari_dir = os.path.dirname(os.path.dirname(current_file_dir))
 resources=os.path.join(yomi_kazari_dir,'SRC','Resources')
+
+
+class BookPopup(QWidget):
+    def __init__(self, book):
+        super().__init__()
+        self.setWindowTitle("Book Popup")
+
+        # Set the main widget for the popup
+        layout = QVBoxLayout(self)
+        font = QFont("Noto Sans", 20)
+        self.setStyleSheet("background-color: #222436;color: white;")
+
+        #create a dedicated layout & container specifically for the cover & open book button
+        container=QWidget()
+        layout2=QHBoxLayout()
+
+        open_book=QPushButton()
+        open_book_path = os.path.join(resources,'arrow_icon64.png')
+        open_book_pixmap = QPixmap(open_book_path)
+        open_book.setIcon(open_book_pixmap)
+        open_book.setIconSize(open_book_pixmap.size())
+        open_book.setFixedSize(150,200)
+        open_book.setStyleSheet("background-color: transparent; border: none;")
+
+        # Create and add the widgets to the layout
+        cover_label = QLabel()
+        cover_pixmap = QPixmap()
+        cover_pixmap.loadFromData(book.cover)  # Assuming book.cover is in bytes
+        cover_label.setScaledContents(True)
+        cover_label.setPixmap(cover_pixmap)
+        cover_label.setFixedSize(150,200)
+
+        layout2.addWidget(cover_label)
+        layout2.addWidget(open_book)
+        layout2.setSpacing( 10 )
+        layout2.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        container.setLayout(layout2)
+        layout.addWidget(container)
+
+        # Add other book details like author, publication time, and synopsis to the layout
+        book_title=QLabel('Title: '+ book.title)
+        book_title.setFont(font)
+        layout.addWidget(book_title)
+
+        author_label = QLabel('Author name: '+book.author)
+        author_label.setFont(font)
+        layout.addWidget(author_label)
+
+        published_label = QLabel('Publication date: '+ book.publication_date)
+        published_label.setFont(font)
+        layout.addWidget(published_label)
+
+
+        # the synopsis isn't available in the metadata, and will be acquired in the future using methods like webscraping.
+        # Adjust the position and size of the popup
+        screen_geometry = QApplication.primaryScreen().availableGeometry()
+        desired_width = screen_geometry.width() // 10
+        self.setGeometry(screen_geometry.width() - desired_width - 20, 0, desired_width, screen_geometry.height())
+        self.show()
+
+
 
 class BookshelfWidget(QWidget):
     def __init__(self, parent=None):
@@ -46,6 +108,8 @@ class MainWindow(QMainWindow):
         top_bar_layout = QHBoxLayout()
 
         self.top_bar_widget=top_bar_widget
+
+        self.book_button_map = {}
 
         # Creating add_book with an icon.
         add_book_widget = QWidget()
@@ -179,13 +243,15 @@ class MainWindow(QMainWindow):
 
 
 
-        # Add the top bar widget and the scroll area to the main content layout
+        # Add the top bar widget the scroll area and the covers widget to the main content layout
         main_content_layout.addWidget(top_bar_widget)
         main_content_layout.addWidget(scroll_area)
         main_content_layout.addWidget(covers_widget)
         # Set the font and color for the main content widget
         main_content_widget.setFont(font)
         main_content_widget.setStyleSheet("color: white;")
+
+        self.main_content_layout=main_content_layout
 
         # Create a button group
         button_group = QButtonGroup()
@@ -202,27 +268,28 @@ class MainWindow(QMainWindow):
         # Add button functionality:
 
         add_book.clicked.connect( open_file_explorer_epub )
-        add_book.clicked.connect( lambda: self.display_books_bookshelf(button_group) )
-        covers_widget.setLayout( covers_layout )
-        main_content_widget.layout().update()
-    def display_books_bookshelf(self,button_group):
+        add_book.clicked.connect(lambda: (print("Books should have refreshed upon click"), self.display_books_bookshelf(button_group), main_content_widget.layout().update(),covers_widget.setLayout( covers_layout )))
 
-        # Read from the current database file
+        self.active_popup = None # init value to keep track of the book description popup.
+
+    def display_books_bookshelf(self,button_group):
         ebook_db = EbookDatabase('ebooks.db')
         books = ebook_db.get_books()
+        self.books = books
 
         # Create a list of all authors
-        authors = [book.author for book in books]
+        authors = [book.author for book in self.books]
 
         # Create author bookshelves and count the number of books per author
         author_counts = Counter(authors)
         unique_authors = list(author_counts.keys())
-
+        titles=[book.title for book in self.books]
+        print(titles)
         # Create bookshelves for each unique author
         bookshelves = self.create_author_bookshelves(unique_authors)
 
         # Iterate over the books and add book covers to the corresponding author bookshelf
-        for book in books:
+        for book in self.books:
             author = book.author
             book_cover_label = QLabel()
             pixmap = QPixmap()
@@ -244,15 +311,17 @@ class MainWindow(QMainWindow):
             # Add the book cover button to the bookshelf widget
             bookshelf_widget = bookshelf_layout.itemAt(0).widget()
             bookshelf_widget.layout().addWidget(cover_button)
+            bookshelf_widget.layout().setAlignment(Qt.AlignmentFlag.AlignLeft)
             button_group.addButton(cover_button)
-            # Connect the buttonClicked signal to the handle_button_selection method
-            button_group.buttonClicked.connect(self.handle_button_selection)
-
+            self.book_button_map[cover_button]=book
+        # Connect the buttonClicked signal to the handle_button_selection method
+        button_group.buttonClicked.connect(self.handle_button_selection)
+        #print(self.book_button_map)
         # Add the bookshelves to the covers layout
         covers_layout = QVBoxLayout()
         for bookshelf_layout in bookshelves.values():
             covers_layout.addLayout(bookshelf_layout)
-
+        self.covers_layout=covers_layout
         # Create a widget to hold the covers layout
         covers_widget = QWidget()
         covers_widget.setLayout(covers_layout)
@@ -268,6 +337,23 @@ class MainWindow(QMainWindow):
         for other_button in self.button_group.buttons():
             if other_button != button:
                 other_button.setStyleSheet("background-color: transparent; border: none;")
+        # Close the current book popup if it's open
+        if self.active_popup:
+            self.active_popup.close()
+            print("popup closed")
+
+        # Show the book popup
+        book = self.get_book_from_button(button)
+        if book:
+            popup = BookPopup(book)
+            self.active_popup = popup
+            self.main_content_layout.addWidget(popup)
+            popup.show()
+
+    def get_book_from_button(self, button):
+        # Retrieve the book associated with the button
+        return self.book_button_map.get(button)
+
     def create_author_bookshelves(self, authors):
         # Create a dictionary to store bookshelves for each author
         bookshelves = {}

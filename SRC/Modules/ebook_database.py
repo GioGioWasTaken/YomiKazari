@@ -31,10 +31,12 @@ class EbookDatabase:
                 VALUES (?, ?, ?, ?, ?)
             '''
             # Read the image file as bytes
-            with open( ebook.cover, "rb" ) as image_file:
-                image_data = image_file.read()
+            image_data=None # account for cases where no cover is provided.
+            if ebook.cover:
+                with open( ebook.cover, "rb" ) as image_file:
+                    image_data = image_file.read()
 
-            values = (ebook.title, ebook.author, ebook.date, ebook.content, image_data)
+            values = (ebook.title, ebook.author, ebook.published, ebook.content, image_data)
             try:
                 cursor.execute( sql, values )
                 conn.commit()

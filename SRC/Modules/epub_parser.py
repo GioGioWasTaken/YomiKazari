@@ -70,9 +70,12 @@ class EPUBParser: # Make a class, in order to keep OOP conventions.
                 print(f"item content: {item.get_content}")
                 break
         if cover_image:
-            image = Image.open(io.BytesIO(cover_image))
-            image.save('cover.jpg')
-            return 'cover.jpg'
+            try:
+             image = Image.open(io.BytesIO(cover_image))
+             image.save('cover.jpg')
+             return 'cover.jpg'
+            except OSError:
+                return None
         else:
             return None # if there is no image at all, we will return None.
             # Note for later: I can add a None functionality,

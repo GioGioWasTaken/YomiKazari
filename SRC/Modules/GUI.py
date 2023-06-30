@@ -316,7 +316,7 @@ class MainWindow(QMainWindow):
             self.book_button_map[cover_button]=book
         # Connect the buttonClicked signal to the handle_button_selection method
         button_group.buttonClicked.connect(self.handle_button_selection)
-        #print(self.book_button_map)
+        print(self.book_button_map)
         # Add the bookshelves to the covers layout
         covers_layout = QVBoxLayout()
         for bookshelf_layout in bookshelves.values():

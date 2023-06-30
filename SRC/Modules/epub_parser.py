@@ -6,6 +6,13 @@ from ebooklib import epub
 from PIL import Image
 import io
 from bs4 import BeautifulSoup
+import re
+def remove_non_numeric(string): # to clean dates
+    # Use regular expression to remove non-numeric characters
+    pattern = r'[^0-9-]'
+    cleaned_string = re.sub(pattern, '', string)
+    return cleaned_string
+
 class EPUBParser: # Make a class, in order to keep OOP conventions.
     def __init__(self, epub_path):
         self.epub_path = epub_path
@@ -30,7 +37,8 @@ class EPUBParser: # Make a class, in order to keep OOP conventions.
             metadata['publication_date'] = "Unknown"
         else:
             # Process the publication date
-            metadata['publication_date']=metadata['publication_date'][0]
+            metadata['publication_date']=metadata['publication_date'][0][0]
+            metadata['publication_date']=remove_non_numeric(metadata['publication_date'])
 
         # Author errors
 

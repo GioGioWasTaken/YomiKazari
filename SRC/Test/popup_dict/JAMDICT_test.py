@@ -8,7 +8,6 @@ jam = Jamdict()
 def parse_entry(word):
     result = jam.lookup(word) # get entry info using jamdict
     result_text = result.entries[0].text() # get the text
-    print( result_text, type( result_text ) ) # print it for cross-checking
     parts = result_text.split(":") # start to parse it, step 1, parts.
 
     tmp_word = parts[0].strip().replace("(", "").replace(")", "")
@@ -34,21 +33,20 @@ def parse_entry(word):
     return furi_word, kanji_word, definitions, difference
 deinflector=deinflector.deinflector_object
 def parsing_pipeline(entry):
-    try:
-        furi_word, kanji_word, definitions, difference = parse_entry(entry)
-        return furi_word, kanji_word, definitions, difference
-    except IndexError:
-        entry=deinflector.deinflect(entry)
-        deinflection_possib=[deinflection.get('term') for deinflection in entry]
-        for possib in deinflection_possib:
+    entry=deinflector.deinflect(entry)
+    deinflection_possib=[deinflection.get('term') for deinflection in entry]
+    if len(deinflection_possib)>1: # allow for multiple inflection possibilities to be detected, as it's possible for a word to have multiple correct answers, according to context.
+        print(f"deinflection_possib:{deinflection_possib}Deinflection_possib len:{len(deinflection_possib)}\n")
+        for index,possib in enumerate(deinflection_possib):
             try:
                 furi_word, kanji_word, definitions, difference = parse_entry(possib)
+                print(f"This is the #{index} deinflection possibility.")
+                print(f"Furi Word: {furi_word}")
+                print(f"Kanji Word: {kanji_word}")
+                print(f"Definitions: {definitions}")
+                print(f"Difference: {difference}\n")
             except IndexError:
                 continue
-furi_word, kanji_word, definitions, difference=parsing_pipeline("たまらない")
-
-
-print(f"Furi Word: {furi_word}")
-print(f"Kanji Word: {kanji_word}")
-print(f"Definitions: {definitions}")
-print(f"Difference: {difference}")
+    else:
+        furi_word, kanji_word, definitions, difference = parse_entry(entry)
+parsing_pipeline("食べられ")

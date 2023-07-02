@@ -62,4 +62,6 @@ class Deinflector:
             value |= rule_bits
         return value
 deinflector_object=Deinflector(data)
-print(deinflector_object.deinflect("堪らない"))
+#Testing the module
+if __name__ == "__main__":
+    print(deinflector_object.deinflect("食べられ"))

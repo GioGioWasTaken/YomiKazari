@@ -312,8 +312,8 @@ class MainWindow(QMainWindow):
         # Add button functionality:
 
         add_book.clicked.connect( open_file_explorer_epub )
-        add_book.clicked.connect(lambda: (print("Books should have refreshed upon click"),setattr(self, 'book_button_map', {})
- ,self.display_books_bookshelf(button_group), main_content_widget.layout().update(),covers_widget.setLayout( covers_layout )))
+        add_book.clicked.connect(lambda: (print("Books should have refreshed upon click"),setattr(self, 'book_button_map', {}),self.active_popup.close()
+ ,setattr("covers_layout",self.display_books_bookshelf(button_group)),main_content_widget.layout().update(),covers_widget.setLayout( covers_layout )))
 
         self.active_popup = None # init value to keep track of the book description popup.
 
@@ -385,7 +385,7 @@ class MainWindow(QMainWindow):
                 other_button.setChecked( False )
         # Close the current book popup if it's open
         if self.active_popup:
-            self.active_popup.close()
+            self.active_popup.deleteLater()
         book = self.get_book_from_button(button)
         if book:
             popup = BookPopup(book)
@@ -396,6 +396,8 @@ class MainWindow(QMainWindow):
         self.text_win.closed.connect(lambda: (setattr(self,"text_win",None)))
     def get_book_from_button(self, button):
         # Retrieve the book associated with the button
+        print(self.book_button_map)
+        print(self.book_button_map.get(button))
         return self.book_button_map.get(button)
 
     def open_book_handler(self,book):

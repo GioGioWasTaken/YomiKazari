@@ -3,13 +3,12 @@ from SRC.Modules.e_book_object import eBook_in_db
 import sqlite3
 import os
 class EbookDatabase:
-    current_file_dir = os.path.dirname(os.path.abspath(__file__))
-    yomi_kazari_dir = os.path.dirname(os.path.dirname(current_file_dir))
-    resources = os.path.join(yomi_kazari_dir, 'SRC', 'Resources')
-
     def __init__(self, db_file):
         self.db_file = db_file
-
+        current_file_dir = os.path.dirname( os.path.abspath( __file__ ) )
+        yomi_kazari_dir = os.path.dirname( os.path.dirname( current_file_dir ) )
+        resources = os.path.join( yomi_kazari_dir, 'SRC', 'Resources' )
+        self.resources=resources
     def create_table(self):
         with sqlite3.connect(self.db_file) as conn:
             cursor = conn.cursor()
@@ -41,7 +40,7 @@ class EbookDatabase:
                 with open( ebook.cover, "rb" ) as image_file:
                     image_data = image_file.read()
             else:
-                image_link=os.path.join(resources,'unknown_author_cover.jpg') # in the case where a cover cannot be found nor can an image be found, a default cover will be assigned.
+                image_link=os.path.join(self.resources,'unknown_author_cover.jpg') # in the case where a cover cannot be found nor can an image be found, a default cover will be assigned.
                 with open (image_link, "rb") as image_file:
                     image_data=image_file.read()
             values = (ebook.title, ebook.author, ebook.published, ebook.content, image_data)

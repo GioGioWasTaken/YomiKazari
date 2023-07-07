@@ -15,8 +15,8 @@
 
 # Author: GioGioBestCat
 # Date: 2.06.2023
-from SRC.Modules import ebook_database
-from SRC.Modules.e_book_object import eBook
+from SRC import ebook_database
+from SRC import eBook
 
 if __name__ == '__main__':
     # Perform any initialization or setup tasks here

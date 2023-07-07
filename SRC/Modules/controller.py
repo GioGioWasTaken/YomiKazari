@@ -1,6 +1,5 @@
 #Following the principle of separation of concerns, we will place the underlying
 # operations of the buttons inside the GUI, in a dedicated module.
-import os
 from PySide6.QtWidgets import QFileDialog
 from ebook_database import EbookDatabase
 from SRC.Modules.e_book_object import eBook

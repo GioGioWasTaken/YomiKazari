@@ -1,11 +1,10 @@
 # The GUI for YomiKazari!
 import sys
 import os
-import time
 from collections import Counter
 from controller import open_file_explorer_epub
 from ebook_database import EbookDatabase
-from SRC.Modules.e_book_object import eBook
+from functools import partial
 from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QLineEdit, QHBoxLayout, QScrollArea, QLabel, QButtonGroup,QTextBrowser
 from PySide6.QtGui import QFont, QPixmap, Qt, QIcon, QPainter
 from PySide6.QtCore import Signal
@@ -16,7 +15,7 @@ resources=os.path.join(yomi_kazari_dir,'SRC','Resources')
 
 
 class BookPopup(QWidget):
-    def __init__(self, book):
+    def __init__(self, book, open_book_func):
         super().__init__()
         self.setWindowTitle("Book Popup")
 
@@ -36,6 +35,9 @@ class BookPopup(QWidget):
         open_book.setIconSize(open_book_pixmap.size())
         open_book.setFixedSize(150,200)
         open_book.setStyleSheet("background-color: transparent; border: none;")
+
+        open_book.clicked.connect( partial( open_book_func, book=book ) )
+        open_book.clicked.connect(print("Open book arrow clicked"))
 
         # Create and add the widgets to the layout
         cover_label = QLabel()
@@ -95,7 +97,6 @@ class YomiKazariTextWin(QMainWindow):
         # GENERAL SETTINGS
         font = QFont("Noto Sans", 20)
         self.setStyleSheet("background-color: #222436;")
-
         # Create a scrollable area to hold the content
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
@@ -141,6 +142,8 @@ class MainWindow(QMainWindow):
         # GENERAL SETTINGS
         font = QFont("Noto Sans", 20)
         self.setStyleSheet("background-color: #222436;")
+        win_icon=QIcon(os.path.join(resources,"YomiKazariWinIcon.png"))
+        self.setWindowIcon(win_icon)
         # set up a books attribute for future use.
         ebook_db = EbookDatabase('ebooks.db')
         books = ebook_db.get_books()
@@ -388,11 +391,10 @@ class MainWindow(QMainWindow):
             self.active_popup.deleteLater()
         book = self.get_book_from_button(button)
         if book:
-            popup = BookPopup(book)
+            popup = BookPopup(book,self.open_book_handler)
             self.active_popup = popup
             self.main_content_layout.addWidget(popup)
             print(f"Current book title {book.title}")
-        self.active_popup.open_book.clicked.connect(self.open_book_handler( book ))
         self.text_win.closed.connect(lambda: (setattr(self,"text_win",None)))
     def get_book_from_button(self, button):
         # Retrieve the book associated with the button

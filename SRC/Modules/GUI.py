@@ -1,13 +1,12 @@
 # The GUI for YomiKazari!
 import sys
 import os
-import time
 from collections import Counter
 from controller import open_file_explorer_epub
 from ebook_database import EbookDatabase
-from SRC.Modules.e_book_object import eBook
-from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QLineEdit, QHBoxLayout, QScrollArea, QLabel, QButtonGroup,QDialog
+from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QLineEdit, QHBoxLayout, QScrollArea, QLabel, QButtonGroup,QTextBrowser
 from PySide6.QtGui import QFont, QPixmap, Qt, QIcon, QPainter
+from PySide6.QtCore import Signal
 # get path to resources to load later.
 current_file_dir = os.path.dirname(os.path.abspath(__file__))
 yomi_kazari_dir = os.path.dirname(os.path.dirname(current_file_dir))
@@ -51,6 +50,8 @@ class BookPopup(QWidget):
         container.setLayout(layout2)
         layout.addWidget(container)
 
+        self.open_book=open_book
+
         # Add other book details like author, publication time, and synopsis to the layout
         book_title=QLabel('Title: '+ book.title)
         book_title.setFont(font)
@@ -84,7 +85,49 @@ class BookshelfWidget(QWidget):
         pixmap = QPixmap(os.path.join(resources, 'woodshelf_model V3.png'))
         painter.drawPixmap(self.rect(), pixmap)
 
+class YomiKazariTextWin(QMainWindow):
+    def __init__(self, book, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle(f"{book.title} Text Window")
+        print(book.title)
+        # GENERAL SETTINGS
+        font = QFont("Noto Sans", 20)
+        self.setStyleSheet("background-color: #222436;")
+        # Create a scrollable area to hold the content
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
 
+        # Create a widget to act as a container for the content
+        content_widget = QWidget()
+        scroll_area.setWidget(content_widget)
+
+        # Create a vertical layout for the content widget
+        layout = QVBoxLayout(content_widget)
+
+        # Create a QLabel for the cover image
+        cover_label = QLabel()
+        cover_pixmap = QPixmap()
+        cover_pixmap.loadFromData(book.cover)  # book.cover is in bytes
+        cover_label.setPixmap(cover_pixmap)
+        #layout.addWidget(cover_label)
+
+        # Create a QTextBrowser for the book content
+        content_browser = QTextBrowser()
+        content_browser.setPlainText(book.content)
+        content_browser.setStyleSheet("color: white;")
+        content_browser.setFont(font)
+        layout.addWidget(content_browser)
+
+        # Set the content widget as the central widget
+        self.setCentralWidget(scroll_area)
+
+        # Show the window
+        self.showMaximized()
+    closed = Signal()
+
+    def closeEvent(self, event):
+        self.closed.emit()
+        super().closeEvent(event)
 
 
 
@@ -95,13 +138,13 @@ class MainWindow(QMainWindow):
         # GENERAL SETTINGS
         font = QFont("Noto Sans", 20)
         self.setStyleSheet("background-color: #222436;")
-
+        win_icon=QIcon(os.path.join(resources,"YomiKazariWinIcon.png"))
+        self.setWindowIcon(win_icon)
         # set up a books attribute for future use.
         ebook_db = EbookDatabase('ebooks.db')
         books = ebook_db.get_books()
         self.books = books
-
-
+        self.text_win = None  # Attribute to store the YomiKazariTextWin instance
 
         # Create the top bar widget
         top_bar_widget = QWidget()
@@ -268,7 +311,8 @@ class MainWindow(QMainWindow):
         # Add button functionality:
 
         add_book.clicked.connect( open_file_explorer_epub )
-        add_book.clicked.connect(lambda: (print("Books should have refreshed upon click"), self.display_books_bookshelf(button_group), main_content_widget.layout().update(),covers_widget.setLayout( covers_layout )))
+        add_book.clicked.connect(lambda: (print("Books should have refreshed upon click"),setattr(self, 'book_button_map', {}),self.active_popup.close()
+ ,setattr("covers_layout",self.display_books_bookshelf(button_group)),main_content_widget.layout().update(),covers_widget.setLayout( covers_layout )))
 
         self.active_popup = None # init value to keep track of the book description popup.
 
@@ -337,22 +381,27 @@ class MainWindow(QMainWindow):
         for other_button in self.button_group.buttons():
             if other_button != button:
                 other_button.setStyleSheet("background-color: transparent; border: none;")
+                other_button.setChecked( False )
         # Close the current book popup if it's open
         if self.active_popup:
-            self.active_popup.close()
-            print("popup closed")
-
-        # Show the book popup
+            self.active_popup.deleteLater()
         book = self.get_book_from_button(button)
         if book:
             popup = BookPopup(book)
             self.active_popup = popup
             self.main_content_layout.addWidget(popup)
-            popup.show()
-
+            print(f"Current book title {book.title}")
+        self.active_popup.open_book.clicked.connect(self.open_book_handler( book ))
+        self.text_win.closed.connect(lambda: (setattr(self,"text_win",None)))
     def get_book_from_button(self, button):
         # Retrieve the book associated with the button
+        print(self.book_button_map)
+        print(self.book_button_map.get(button))
         return self.book_button_map.get(button)
+
+    def open_book_handler(self,book):
+        self.text_win=YomiKazariTextWin(book)
+        self.text_win.show()
 
     def create_author_bookshelves(self, authors):
         # Create a dictionary to store bookshelves for each author
@@ -379,9 +428,8 @@ class MainWindow(QMainWindow):
 
         return bookshelves
 
-
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     mainWindow = MainWindow()
-    mainWindow.show()
+    mainWindow.showMaximized()
     sys.exit(app.exec())

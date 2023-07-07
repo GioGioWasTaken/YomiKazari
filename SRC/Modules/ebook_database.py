@@ -61,6 +61,7 @@ class EbookDatabase:
             '''
             cursor.execute(sql, (title,))
             conn.commit()
+            print(f"{title} Successfully deleted")
 
     def get_books(self):
         books=[]

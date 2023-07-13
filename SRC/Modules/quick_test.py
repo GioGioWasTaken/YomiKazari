@@ -348,18 +348,29 @@ class MainWindow(QMainWindow):
 
         self.active_popup = None # init value to keep track of the book description popup.
 
+    def flip_text_with_comma(text):
+        parts = text.split( ',' )
+        if len( parts ) > 1:
+            flipped_text = ', '.join( parts[::-1] )
+            return flipped_text
+        return text
 
     def display_books_bookshelf(self,button_group):
         ebook_db = EbookDatabase('ebooks.db')
         books = ebook_db.get_books()
         self.books = books
 
-        # Create a list of all authors
+        # Create a list of all authors with normalized names
         authors = [book.author for book in self.books]
+        print(authors)
+        normalized_authors = [', '.join( sorted( author.split( ', ' ) if ', ' in author else author.split( ' ' ) ) ) for
+                              author in authors]
 
         # Create author bookshelves and count the number of books per author
-        author_counts = Counter(authors)
-        unique_authors = list(author_counts.keys())
+        author_counts = Counter( normalized_authors )
+        unique_authors = list( author_counts.keys() )
+        print( unique_authors )
+
         titles=[book.title for book in self.books]
         print(titles)
         # Create bookshelves for each unique author
@@ -376,7 +387,12 @@ class MainWindow(QMainWindow):
             book_cover_label.setFixedSize(150, 200)
 
             # Find the corresponding bookshelf for the author
-            bookshelf_layout = bookshelves[author]
+            try:
+                bookshelf_layout = bookshelves[author]
+            except KeyError:
+                print(author)
+                flipped_author=self.flip_text_with_comma(author)
+                bookshelf_layout = bookshelves[flipped_author]
 
             # Create a button for the book cover
             cover_button = QPushButton()
@@ -458,7 +474,7 @@ class MainWindow(QMainWindow):
 
             # Store the bookshelf layout in the dictionary
             bookshelves[author] = bookshelf_layout
-
+            print(bookshelves)
         return bookshelves
 
 if __name__ == "__main__":

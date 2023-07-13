@@ -4,17 +4,25 @@ import os
 from collections import Counter
 from controller import open_file_explorer_epub
 from ebook_database import EbookDatabase
+from functools import partial
 from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QLineEdit, QHBoxLayout, QScrollArea, QLabel, QButtonGroup,QTextBrowser
 from PySide6.QtGui import QFont, QPixmap, Qt, QIcon, QPainter
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Signal, QSize
 # get path to resources to load later.
 current_file_dir = os.path.dirname(os.path.abspath(__file__))
 yomi_kazari_dir = os.path.dirname(os.path.dirname(current_file_dir))
 resources=os.path.join(yomi_kazari_dir,'SRC','Resources')
+ebook_db = EbookDatabase( 'ebooks.db' )
 
 
 class BookPopup(QWidget):
-    def __init__(self, book):
+    def create_delete_book_closure(self,book):
+        def delete_book_closure():
+            ebook_db.delete_ebook( book.title )
+
+        return delete_book_closure
+
+    def __init__(self, book, open_book_func):
         super().__init__()
         self.setWindowTitle("Book Popup")
 
@@ -27,6 +35,7 @@ class BookPopup(QWidget):
         container=QWidget()
         layout2=QHBoxLayout()
 
+        # create the open book button
         open_book=QPushButton()
         open_book_path = os.path.join(resources,'arrow_icon64.png')
         open_book_pixmap = QPixmap(open_book_path)
@@ -34,6 +43,20 @@ class BookPopup(QWidget):
         open_book.setIconSize(open_book_pixmap.size())
         open_book.setFixedSize(150,200)
         open_book.setStyleSheet("background-color: transparent; border: none;")
+
+        open_book.clicked.connect( partial( open_book_func, book=book ) ) # partial function to prevent immediate execution
+
+        # create the delete book button
+        delete_book = QPushButton()
+        delete_book_path = os.path.join( resources, 'trashcan_icon.png' )
+        delete_book_pixmap = QPixmap( delete_book_path )
+        scaled_pixmap = delete_book_pixmap.scaled( QSize( 112.5, 150 ), Qt.AspectRatioMode.KeepAspectRatio,Qt.SmoothTransformation )
+        delete_book.setIcon( QIcon( scaled_pixmap ) )
+        delete_book.setIconSize( scaled_pixmap.size() )
+        delete_book.setFixedSize( 150, 200 )
+        delete_book.setStyleSheet( "background-color: transparent; border: none;" )
+
+        delete_book.clicked.connect(self.create_delete_book_closure(book))
 
         # Create and add the widgets to the layout
         cover_label = QLabel()
@@ -45,12 +68,14 @@ class BookPopup(QWidget):
 
         layout2.addWidget(cover_label)
         layout2.addWidget(open_book)
+        layout2.addWidget(delete_book)
         layout2.setSpacing( 10 )
         layout2.setAlignment(Qt.AlignmentFlag.AlignLeft)
         container.setLayout(layout2)
         layout.addWidget(container)
 
-        self.open_book=open_book
+        self.delete_book=delete_book # the delete book function will affect the entire books database, so we call it outside this class
+        # (so we don't have to import the book database into here)
 
         # Add other book details like author, publication time, and synopsis to the layout
         book_title=QLabel('Title: '+ book.title)
@@ -117,7 +142,7 @@ class YomiKazariTextWin(QMainWindow):
         content_browser.setStyleSheet("color: white;")
         content_browser.setFont(font)
         layout.addWidget(content_browser)
-
+        content_browser.mouseDoubleClickEvent(self.word_double_clicked())
         # Set the content widget as the central widget
         self.setCentralWidget(scroll_area)
 
@@ -128,7 +153,11 @@ class YomiKazariTextWin(QMainWindow):
     def closeEvent(self, event):
         self.closed.emit()
         super().closeEvent(event)
-
+    def word_double_clicked(self):
+        cursor = self.sender().cursorForPosition(self.sender().mapFromGlobal(self.cursor().pos()))
+        cursor.select(cursor.WordUnderCursor)
+        word = cursor.selectedText()
+        print(f"Double-clicked word: {word}")
 
 
 class MainWindow(QMainWindow):
@@ -141,9 +170,9 @@ class MainWindow(QMainWindow):
         win_icon=QIcon(os.path.join(resources,"YomiKazariWinIcon.png"))
         self.setWindowIcon(win_icon)
         # set up a books attribute for future use.
-        ebook_db = EbookDatabase('ebooks.db')
         books = ebook_db.get_books()
         self.books = books
+        self.books_database=ebook_db
         self.text_win = None  # Attribute to store the YomiKazariTextWin instance
 
         # Create the top bar widget
@@ -308,13 +337,22 @@ class MainWindow(QMainWindow):
         # Set the main content widget as the central widget of the QMainWindow
         self.setCentralWidget(main_content_widget)
 
+
+
+
+
         # Add button functionality:
 
         add_book.clicked.connect( open_file_explorer_epub )
-        add_book.clicked.connect(lambda: (print("Books should have refreshed upon click"),setattr(self, 'book_button_map', {}),self.active_popup.close()
- ,setattr("covers_layout",self.display_books_bookshelf(button_group)),main_content_widget.layout().update(),covers_widget.setLayout( covers_layout )))
+        add_book.clicked.connect( lambda: (print( "Books should have refreshed upon click" ),
+                                           setattr( self, 'book_button_map', {} ),
+                                           self.active_popup.close() if self.active_popup else None,
+                                           setattr( "covers_layout", self.display_books_bookshelf( button_group ) ),
+                                           main_content_widget.layout().update(),
+                                           covers_widget.setLayout( covers_layout )) ) # I know this is a bit messy, will fix in the future to a proper function.
 
         self.active_popup = None # init value to keep track of the book description popup.
+
 
     def display_books_bookshelf(self,button_group):
         ebook_db = EbookDatabase('ebooks.db')
@@ -387,11 +425,13 @@ class MainWindow(QMainWindow):
             self.active_popup.deleteLater()
         book = self.get_book_from_button(button)
         if book:
-            popup = BookPopup(book)
+            popup = BookPopup(book,self.open_book_handler)
             self.active_popup = popup
             self.main_content_layout.addWidget(popup)
+
+            #self.active_popup.delete_book.clicked.connect( self.handle_delete_book )
+
             print(f"Current book title {book.title}")
-        self.active_popup.open_book.clicked.connect(self.open_book_handler( book ))
         self.text_win.closed.connect(lambda: (setattr(self,"text_win",None)))
     def get_book_from_button(self, button):
         # Retrieve the book associated with the button
@@ -427,6 +467,20 @@ class MainWindow(QMainWindow):
             bookshelves[author] = bookshelf_layout
 
         return bookshelves
+    def handle_delete_book(self):
+        print("Books should have refreshed upon deletion")
+        self.active_popup.close() if self.active_popup else None
+        self.active_popup = None
+
+        # Close the current instance of MainWindow
+        self.close()
+
+        # Open a new instance of MainWindow
+        self.open_new_instance()
+
+    def open_new_instance(self):
+        new_instance = MainWindow()
+        new_instance.showMaximized()
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

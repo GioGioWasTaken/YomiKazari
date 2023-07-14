@@ -79,7 +79,7 @@ class BookPopup(QWidget):
         delete_book.setFixedSize( 150, 200 )
         delete_book.setStyleSheet( "background-color: transparent; border: none;" )
 
-        delete_book.clicked.connect(self.create_delete_book_closure(book))
+        delete_book.clicked.connect(partial(ebook_db.delete_ebook, book.title))
 
         # Create and add the widgets to the layout
         cover_label = QLabel()
@@ -357,6 +357,8 @@ class MainWindow(QMainWindow):
             self.main_content_layout.addWidget(popup)
 
             #self.active_popup.delete_book.clicked.connect( self.handle_delete_book )
+            # considered making the program reload when each book is deleted because the method i used with add_book didn't seem to work. Stopped that for now.
+
 
             print(f"Current book title {book.title}")
         self.text_win.closed.connect(lambda: (setattr(self,"text_win",None)))

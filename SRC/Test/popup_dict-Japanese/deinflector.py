@@ -1,5 +1,3 @@
-import time
-
 from deinflector_data import data
 
 class Deinflector:
@@ -68,18 +66,20 @@ deinflector_object=Deinflector(data)
 def deinflect_full(entries): # take a deinflected entry object
     for index, dict_entry in enumerate( entries ): # iterate over every dict entry
         if index==0:
+            print(f"First entry: {entries[index]}")
             continue
         while True:
-            entries = deinflector_object.deinflect( entries[0].get( 'term' ) )
-            if entries[index].get( 'rules' ) == 0:
+            entries = deinflector_object.deinflect( dict_entry.get( 'term' ))
+            # Printing current entry for debugging purposes
+            print(f"current entry: {entries} at #{index}")
+            if entries[0].get( 'rules' ) == 0:
                 break  # Stop repeating if rules == 0
             entries = entries
 
-            # Printing current entry for debugging purposes
-            print(f"current entry: {entries}")
-            time.sleep(15)
     print(f"final entry: {entries}")
     return entries
 
 if __name__ == "__main__":
-    deinflect_full(deinflector_object.deinflect("食べられる"))
+    print(f'Normal deinflection{deinflector_object.deinflect("話しすぎ")}')
+    print("Recursive deinflection:")
+    deinflect_full(deinflector_object.deinflect("話しすぎ"))

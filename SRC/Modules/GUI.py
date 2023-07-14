@@ -14,6 +14,29 @@ yomi_kazari_dir = os.path.dirname(os.path.dirname(current_file_dir))
 resources=os.path.join(yomi_kazari_dir,'SRC','Resources')
 ebook_db = EbookDatabase( 'ebooks.db' )
 
+class IconButton(QWidget):
+    def __init__(self, icon_path, text,font):
+        super().__init__()
+        self.layout = QVBoxLayout()
+
+        self.button = QPushButton()
+        self.pixmap = QPixmap(icon_path)
+        self.button.setIcon(self.pixmap)
+        self.button.setIconSize(self.pixmap.size())
+        self.layout.addWidget(self.button)
+        self.button.setStyleSheet("background-color: transparent; border: none;")
+
+        self.label = QLabel(text)
+        self.label.setFont(font)
+        self.layout.addWidget(self.label)
+
+        self.setLayout(self.layout)
+
+        self.button.setFont(font)
+
+        icon_size = self.pixmap.size()
+        modified_icon_size = icon_size.scaled(100, 100, Qt.AspectRatioMode.IgnoreAspectRatio)
+        self.button.setIconSize(modified_icon_size)
 
 class BookPopup(QWidget):
     def create_delete_book_closure(self,book):
@@ -183,106 +206,10 @@ class MainWindow(QMainWindow):
 
         self.book_button_map = {}
 
-        # Creating add_book with an icon.
-        add_book_widget = QWidget()
-        add_book_layout = QVBoxLayout()
-
-        add_book = QPushButton()
-        add_book_path = os.path.join(resources,'add_book_pixel.png')
-        add_book_pixmap = QPixmap(add_book_path)
-        add_book.setIcon(add_book_pixmap)
-        add_book.setIconSize(add_book_pixmap.size())
-        add_book_layout.addWidget(add_book)
-        add_book.setStyleSheet("background-color: transparent; border: none;")
-        add_book_text = QLabel("Add book")
-        add_book_text.setFont(font)
-        add_book_layout.addWidget(add_book_text)
-
-        add_book_widget.setLayout(add_book_layout)
-
-        # Modify the text size
-        add_book.setFont(font)
-
-        # Modify the icon size
-        icon_size = add_book_pixmap.size()
-        modified_icon_size = icon_size.scaled(100, 100, Qt.AspectRatioMode.IgnoreAspectRatio)
-        add_book.setIconSize(modified_icon_size)
-
-
-        # Creating add_folder with an icon.
-        add_folder_widget = QWidget()
-        add_folder_layout = QVBoxLayout()
-
-        add_folder = QPushButton()
-        add_folder_path = os.path.join(resources,'folder_icon_pixel.png')
-        add_folder_pixmap = QPixmap(add_folder_path)
-        add_folder.setIcon(add_folder_pixmap)
-        add_folder.setIconSize(add_folder_pixmap.size())
-        add_folder_layout.addWidget(add_folder)
-        add_folder.setStyleSheet("background-color: transparent; border: none;")
-        add_folder_text = QLabel("Add folder")
-        add_folder_text.setFont(font)
-        add_folder_layout.addWidget(add_folder_text)
-
-        add_folder_widget.setLayout(add_folder_layout)
-
-        # Modify the text size
-        add_folder.setFont(font)
-
-        # Modify the icon size
-        icon_size = add_folder_pixmap.size()
-        modified_icon_size = icon_size.scaled(100, 100, Qt.AspectRatioMode.IgnoreAspectRatio)
-        add_folder.setIconSize(modified_icon_size)
-
-        # Creating export_book with an icon.
-        export_book_widget = QWidget()
-        export_book_layout = QVBoxLayout()
-
-        export_book = QPushButton()
-        export_book_path = os.path.join(resources,'export_book_pixel.png')
-        export_book_pixmap = QPixmap(export_book_path)
-        export_book.setIcon(export_book_pixmap)
-        export_book.setIconSize(export_book_pixmap.size())
-        export_book_layout.addWidget(export_book)
-        export_book.setStyleSheet("background-color: transparent; border: none;")
-        export_book_text = QLabel("Export book")
-        export_book_text.setFont(font)
-        export_book_layout.addWidget(export_book_text)
-
-        export_book_widget.setLayout(export_book_layout)
-
-        # Modify the text size
-        export_book.setFont(font)
-
-        # Modify the icon size
-        icon_size = export_book_pixmap.size()
-        modified_icon_size = icon_size.scaled(100, 100, Qt.AspectRatioMode.IgnoreAspectRatio)
-        export_book.setIconSize(modified_icon_size)
-
-        # Creating export_folder with an icon.
-        export_folder_widget = QWidget()
-        export_folder_layout = QVBoxLayout()
-
-        export_folder = QPushButton()
-        export_folder_path = os.path.join(resources,'export_folder_pixel.png')
-        export_folder_pixmap = QPixmap(export_folder_path)
-        export_folder.setIcon(export_folder_pixmap)
-        export_folder.setIconSize(export_folder_pixmap.size())
-        export_folder_layout.addWidget(export_folder)
-        export_folder.setStyleSheet("background-color: transparent; border: none;")
-        export_folder_text = QLabel("Export folder")
-        export_folder_text.setFont(font)
-        export_folder_layout.addWidget(export_folder_text)
-
-        export_folder_widget.setLayout(export_folder_layout)
-
-        # Modify the text size
-        export_folder_widget.setFont(font)
-
-        # Modify the icon size
-        icon_size = export_folder_pixmap.size()
-        modified_icon_size = icon_size.scaled(100, 100, Qt.AspectRatioMode.IgnoreAspectRatio)
-        export_folder.setIconSize(modified_icon_size)
+        add_book_widget = IconButton(os.path.join(resources, 'add_book_pixel.png'), "Add book", font)
+        add_folder_widget = IconButton(os.path.join(resources, 'folder_icon_pixel.png'), "Add folder", font)
+        export_book_widget = IconButton(os.path.join(resources, 'export_book_pixel.png'), "Export book", font)
+        export_folder_widget = IconButton(os.path.join(resources, 'export_folder_pixel.png'), "Export folder", font)
 
         # Create a search bar
         search_bar = QLineEdit()
@@ -343,8 +270,8 @@ class MainWindow(QMainWindow):
 
         # Add button functionality:
 
-        add_book.clicked.connect( open_file_explorer_epub )
-        add_book.clicked.connect( lambda: (print( "Books should have refreshed upon click" ),
+        add_book_widget.button.clicked.connect( open_file_explorer_epub )
+        add_book_widget.button.clicked.connect( lambda: (print( "Books should have refreshed upon click" ),
                                            setattr( self, 'book_button_map', {} ),
                                            self.active_popup.close() if self.active_popup else None,
                                            setattr( "covers_layout", self.display_books_bookshelf( button_group ) ),

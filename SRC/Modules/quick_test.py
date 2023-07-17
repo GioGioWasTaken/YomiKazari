@@ -5,9 +5,11 @@ from collections import Counter
 from controller import open_file_explorer_epub
 from ebook_database import EbookDatabase
 from functools import partial
+from pydictionary_EN import getRecords
 from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QLineEdit, QHBoxLayout, QScrollArea, QLabel, QButtonGroup,QTextBrowser
-from PySide6.QtGui import QFont, QPixmap, Qt, QIcon, QPainter
-from PySide6.QtCore import Signal, QSize
+from PySide6.QtGui import QFont, QPixmap, Qt, QIcon, QPainter, QAction, QContextMenuEvent, QCursor
+from PySide6.QtCore import Signal, QSize, Qt
+
 # get path to resources to load later.
 current_file_dir = os.path.dirname(os.path.abspath(__file__))
 yomi_kazari_dir = os.path.dirname(os.path.dirname(current_file_dir))
@@ -79,7 +81,7 @@ class BookPopup(QWidget):
         delete_book.setFixedSize( 150, 200 )
         delete_book.setStyleSheet( "background-color: transparent; border: none;" )
 
-        delete_book.clicked.connect(partial(ebook_db.delete_ebook, book.title))
+        delete_book.clicked.connect(self.create_delete_book_closure(book))
 
         # Create and add the widgets to the layout
         cover_label = QLabel()
@@ -133,6 +135,41 @@ class BookshelfWidget(QWidget):
         pixmap = QPixmap(os.path.join(resources, 'woodshelf_model V3.png'))
         painter.drawPixmap(self.rect(), pixmap)
 
+
+
+class CustomTextBrowser(QTextBrowser):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self.contextMenuEvent)
+    def contextMenuEvent(self, event):
+        #if isinstance( event, QContextMenuEvent ):
+        menu = self.createStandardContextMenu()
+        selected_text = self.textCursor().selectedText()
+        if selected_text:
+            custom_action = QAction( f"Search: {selected_text}", self ) # name the action
+            custom_action.triggered.connect( self.customActionTriggered )
+            self.selected_word = selected_text  # Store the selected word
+            menu.addAction( custom_action )
+        mouse_pos=QCursor.pos() # get current mouse position
+        menu.exec_(mouse_pos)
+
+    def contains_english_text(self, text):
+        english_letters = [chr( i ) for i in range( 0x0041, 0x005A + 1 )] + [chr( i ) for i in range( 0x0061, 0x007A + 1 )]
+        for char in text:
+            if char in english_letters:
+                return True
+        return False
+
+    def customActionTriggered(self):
+        # Access the stored selected word and confirm the language is currently available
+        if self.contains_english_text(self.selected_word):
+            getRecords(self.selected_word) # call the dictionary function from pydict
+        else:
+            print("Support for non-EN text lookup is currently under development.")
+
+
+
 class YomiKazariTextWin(QMainWindow):
     def __init__(self, book, parent=None):
         super().__init__(parent)
@@ -152,35 +189,25 @@ class YomiKazariTextWin(QMainWindow):
         # Create a vertical layout for the content widget
         layout = QVBoxLayout(content_widget)
 
-        # Create a QLabel for the cover image
-        cover_label = QLabel()
-        cover_pixmap = QPixmap()
-        cover_pixmap.loadFromData(book.cover)  # book.cover is in bytes
-        cover_label.setPixmap(cover_pixmap)
-        #layout.addWidget(cover_label)
-
         # Create a QTextBrowser for the book content
-        content_browser = QTextBrowser()
+        content_browser = CustomTextBrowser()
         content_browser.setPlainText(book.content)
         content_browser.setStyleSheet("color: white;")
         content_browser.setFont(font)
         layout.addWidget(content_browser)
-        content_browser.mouseDoubleClickEvent(self.word_double_clicked())
+
         # Set the content widget as the central widget
         self.setCentralWidget(scroll_area)
 
         # Show the window
         self.showMaximized()
+
     closed = Signal()
 
     def closeEvent(self, event):
         self.closed.emit()
         super().closeEvent(event)
-    def word_double_clicked(self):
-        cursor = self.sender().cursorForPosition(self.sender().mapFromGlobal(self.cursor().pos()))
-        cursor.select(cursor.WordUnderCursor)
-        word = cursor.selectedText()
-        print(f"Double-clicked word: {word}")
+
 
 
 class MainWindow(QMainWindow):

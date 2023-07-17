@@ -27,12 +27,11 @@ def checkWord(word):
     candidates = [w for w in candidates if wordnet.synsets(w)]
     if candidates:
         print(
-            f"Did you mean {candidates[0]}?\nOther possibilities include {candidates[1:]}")
+            f"The word might have been misspelled. Perhaps the word is: {candidates[0]}?\nOther possibilities include: {candidates[1:]}")
         new_word = input("Enter word: ")
         return checkWord(new_word)
     else:
         print("Word not found.")
-        sys.exit(2)
 
 
 def getRecords(word):

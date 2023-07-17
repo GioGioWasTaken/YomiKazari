@@ -6,7 +6,7 @@ from controller import open_file_explorer_epub
 from ebook_database import EbookDatabase
 from functools import partial
 from pydictionary_EN import getRecords
-from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QLineEdit, QHBoxLayout, QScrollArea, QLabel, QButtonGroup,QTextBrowser
+from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget,QDialog, QLineEdit, QHBoxLayout, QScrollArea, QLabel, QButtonGroup,QTextBrowser
 from PySide6.QtGui import QFont, QPixmap, Qt, QIcon, QPainter, QAction, QContextMenuEvent, QCursor
 from PySide6.QtCore import Signal, QSize, Qt
 
@@ -136,6 +136,31 @@ class BookshelfWidget(QWidget):
         painter.drawPixmap(self.rect(), pixmap)
 
 
+class DictionaryPopup(QDialog):
+    def __init__(self, word_definition, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Dictionary Popup")
+        self.setStyleSheet("background-color: #222436;")
+        self.setFixedSize(500,300)
+        # Create a QTextBrowser to display the word definition
+        text_browser = CustomTextBrowser()
+        text_browser.setPlainText(word_definition)
+        text_browser.setStyleSheet("color: white;")
+        text_browser.setFont(QFont("Noto Sans", 20))
+
+        # Create a button to close the popup
+        close_button = QPushButton("Close")
+        close_button.clicked.connect(self.close)
+
+        # Create a vertical layout for the popup
+        layout = QVBoxLayout(self)
+        layout.addWidget(text_browser)
+        layout.addWidget(close_button)
+
+        self.setLayout(layout)
+
+
+
 class CustomTextBrowser(QTextBrowser):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -162,11 +187,18 @@ class CustomTextBrowser(QTextBrowser):
 
     def customActionTriggered(self):
         # Access the stored selected word and confirm the language is currently available
-        if self.contains_english_text(self.selected_word):
-            print(getRecords(self.selected_word)) # call the dictionary function from pydict
-        else:
-            print("Support for non-EN text lookup is currently under development.")
+        if self.contains_english_text( self.selected_word ):
+            dictionary_def = getRecords( self.selected_word )  # call the dictionary function from pydict
+            print(dictionary_def, type(dictionary_def))
 
+            popup_window = DictionaryPopup( dictionary_def )
+            popup_window.exec()  # Use exec() for modal behavior
+
+            #window.show()
+            print("Everything finished loading, supposedly.")
+        else:
+            popup_window=DictionaryPopup("Support for non-EN text lookup is currently under development.")
+            popup_window.exec()
 
 
 class YomiKazariTextWin(QMainWindow):
@@ -206,7 +238,6 @@ class YomiKazariTextWin(QMainWindow):
     def closeEvent(self, event):
         self.closed.emit()
         super().closeEvent(event)
-
 
 
 

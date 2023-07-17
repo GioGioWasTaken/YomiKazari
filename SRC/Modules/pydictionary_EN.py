@@ -8,7 +8,7 @@ def getWordCLI():
     try:
         return sys.argv[1]
     except IndexError:
-        return "ERROR: Bad input. You must provide a word!\nCorrect usage: python3 pyDictionary.py <word>"
+        return "ERROR: Bad input. You must provide a word!"
 
 def checkWord(word):
     """
@@ -20,7 +20,8 @@ def checkWord(word):
 
     suggestions = []
     candidates = dictionary.candidates(word)
-    candidates = [w for w in candidates if wordnet.synsets(w)]
+    if candidates:
+        candidates = [w for w in candidates if wordnet.synsets(w)]
     if candidates:
         suggestions.append(f"The word might have been misspelled. Perhaps the word is: {candidates[0]}?")
         if len(candidates) > 1:

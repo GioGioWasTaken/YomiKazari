@@ -152,7 +152,7 @@ class CustomTextBrowser(QTextBrowser):
             self.selected_word = selected_text  # Store the selected word
             menu.addAction( custom_action )
         mouse_pos=QCursor.pos() # get current mouse position
-        menu.exec_(mouse_pos)
+        menu.exec(mouse_pos)
 
     def contains_english_text(self, text):
         english_letters = [chr( i ) for i in range( 0x0041, 0x005A + 1 )] + [chr( i ) for i in range( 0x0061, 0x007A + 1 )]
@@ -163,8 +163,28 @@ class CustomTextBrowser(QTextBrowser):
 
     def customActionTriggered(self):
         # Access the stored selected word and confirm the language is currently available
-        if self.contains_english_text(self.selected_word):
-            getRecords(self.selected_word) # call the dictionary function from pydict
+        if self.contains_english_text( self.selected_word ):
+            dictionary_def = getRecords( self.selected_word )  # call the dictionary function from pydict
+
+            # Create a scrollable area to hold the content
+            scroll_area = QScrollArea()
+            scroll_area.setWidgetResizable( True )
+
+            # Create a widget to act as a container for the content
+            content_widget = QWidget()
+            scroll_area.setWidget( content_widget )
+
+            # Create a vertical layout for the content widget
+            layout = QVBoxLayout( content_widget )
+
+            lookup_win = CustomTextBrowser()
+            lookup_win.setText( dictionary_def )
+            lookup_win.setStyleSheet( "color: white;" )
+            lookup_win.setFont( QFont( "Noto Sans", 20 ) )
+            layout.addWidget( scroll_area )
+
+            # Show the scroll area
+            scroll_area.show()
         else:
             print("Support for non-EN text lookup is currently under development.")
 

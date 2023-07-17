@@ -8,34 +8,29 @@ def getWordCLI():
     try:
         return sys.argv[1]
     except IndexError:
-        print("ERROR: Bad input. You must provide a word!")
-        print("Correct usage: \033[1m python3 pyDictionary.py <word> \033[0m")
-        sys.exit(2)
-
+        return "ERROR: Bad input. You must provide a word!\nCorrect usage: python3 pyDictionary.py <word>"
 
 def checkWord(word):
     """
-    Check if word exist in dictionary
-
-    If not it will try to make suggestions.
+    Check if word exists in the dictionary.
+    If not, it will try to make suggestions.
     """
     if bool(wordnet.synsets(word)):
         return word
 
-    print("Word not found in dictionary.")
+    suggestions = []
     candidates = dictionary.candidates(word)
     candidates = [w for w in candidates if wordnet.synsets(w)]
     if candidates:
-        print(
-            f"The word might have been misspelled. Perhaps the word is: {candidates[0]}?\nOther possibilities include: {candidates[1:]}")
-        new_word = input("Enter word: ")
-        return checkWord(new_word)
+        suggestions.append(f"The word might have been misspelled. Perhaps the word is: {candidates[0]}?")
+        if len(candidates) > 1:
+            suggestions.append("Other possibilities include: " + ", ".join(candidates[1:]))
+        return "\n".join(suggestions)
     else:
-        print("Word not found.")
-
+        return "Word not found."
 
 def getRecords(word):
-    """Search a word in dictionary and print its coincidences"""
+    """Search a word in the dictionary and return its coincidences"""
     word = checkWord(word)
     syn = wordnet.synsets(word)
     dform = {
@@ -45,30 +40,32 @@ def getRecords(word):
         "r": "adverb",
         "s": "adjective satellite",
     }
+    output = []
     ctr1 = 1
     ctr2 = 97
-    antonyms = list()
+    antonyms = []
     for i in syn[:5]:
         ctr2 = 97
         definition, examples, form = i.definition(), i.examples(), i.pos()
-        print(str(ctr1) + ". ", end="")
-        print(dform[form], "-", word)
-        print("Definition:", definition.capitalize() + ".")
+        output.append(str(ctr1) + ". " + dform[form] + " - " + word)
+        output.append("Definition: " + definition.capitalize() + ".")
         ctr1 += 1
         if len(examples) > 0:
-            print("Usage: ")
+            output.append("Usage:")
             for j in examples:
-                print(chr(ctr2) + ".", j.capitalize() + ".")
+                output.append(chr(ctr2) + ". " + j.capitalize() + ".")
                 ctr2 += 1
-        print()
+        output.append("")
         for j in i.lemmas():
             try:
                 antonyms.append(j.antonyms()[0].name())
             except IndexError:
                 pass
     if len(antonyms) > 0:
-        print("Antonyms : ")
-        print(",".join(antonyms))
+        output.append("Antonyms:")
+        output.append(",".join(antonyms))
+    return "\n".join(output)
+
 
 
 if __name__ == "__main__":

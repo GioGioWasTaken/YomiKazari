@@ -163,7 +163,7 @@ class CustomTextBrowser(QTextBrowser):
     def customActionTriggered(self):
         # Access the stored selected word and confirm the language is currently available
         if self.contains_english_text(self.selected_word):
-            getRecords(self.selected_word) # call the dictionary function from pydict
+            print(getRecords(self.selected_word)) # call the dictionary function from pydict
         else:
             print("Support for non-EN text lookup is currently under development.")
 

@@ -81,8 +81,7 @@ class BookPopup(QWidget):
         delete_book.setFixedSize( 150, 200 )
         delete_book.setStyleSheet( "background-color: transparent; border: none;" )
 
-        delete_book.clicked.connect(self.create_delete_book_closure(book))
-
+        delete_book.clicked.connect( partial( ebook_db.delete_ebook, book.title ) )
         # Create and add the widgets to the layout
         cover_label = QLabel()
         cover_pixmap = QPixmap()
@@ -167,7 +166,6 @@ class CustomTextBrowser(QTextBrowser):
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.contextMenuEvent)
     def contextMenuEvent(self, event):
-        #if isinstance( event, QContextMenuEvent ):
         menu = self.createStandardContextMenu()
         selected_text = self.textCursor().selectedText()
         if selected_text:
@@ -194,7 +192,6 @@ class CustomTextBrowser(QTextBrowser):
             popup_window = DictionaryPopup( dictionary_def )
             popup_window.exec()  # Use exec() for modal behavior
 
-            #window.show()
             print("Everything finished loading, supposedly.")
         else:
             popup_window=DictionaryPopup("Support for non-EN text lookup is currently under development.")
@@ -318,7 +315,7 @@ class MainWindow(QMainWindow):
         covers_layout = self.display_books_bookshelf(button_group )
         covers_widget.setLayout( covers_layout )
         main_content_widget.layout().update()
-
+        self.main_content_widget=main_content_widget
         # Set the main content widget as the central widget of the QMainWindow
         self.setCentralWidget(main_content_widget)
 
@@ -414,8 +411,12 @@ class MainWindow(QMainWindow):
             self.active_popup = popup
             self.main_content_layout.addWidget(popup)
 
-            #self.active_popup.delete_book.clicked.connect( self.handle_delete_book )
-            # considered making the program reload when each book is deleted because the method i used with add_book didn't seem to work. Stopped that for now.
+            self.active_popup.delete_book.clicked.connect( lambda: (print( "Books should have refreshed upon click" ),
+                                           setattr( self, 'book_button_map', {} ),
+                                           self.active_popup.close() if self.active_popup else None,
+                                           setattr( "covers_layout", self.display_books_bookshelf( self.button_group ) ),
+                                           self.main_content_widget.layout().update()) ) # I know this is a bit messy, will fix in the future to a proper function.
+
 
 
             print(f"Current book title {book.title}")
@@ -454,20 +455,6 @@ class MainWindow(QMainWindow):
             bookshelves[author] = bookshelf_layout
 
         return bookshelves
-    def handle_delete_book(self):
-        print("Books should have refreshed upon deletion")
-        self.active_popup.close() if self.active_popup else None
-        self.active_popup = None
-
-        # Close the current instance of MainWindow
-        self.close()
-
-        # Open a new instance of MainWindow
-        self.open_new_instance()
-
-    def open_new_instance(self):
-        new_instance = MainWindow()
-        new_instance.showMaximized()
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

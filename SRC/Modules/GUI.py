@@ -142,7 +142,7 @@ class DictionaryPopup(QDialog):
         self.setStyleSheet("background-color: #222436;")
         self.setFixedSize(500,300)
         # Create a QTextBrowser to display the word definition
-        text_browser = CustomTextBrowser()
+        text_browser = CustomTextBrowser() # made the text win my custom version, so you can look up words even in dictionary definitions.
         text_browser.setPlainText(word_definition)
         text_browser.setStyleSheet("color: white;")
         text_browser.setFont(QFont("Noto Sans", 20))
@@ -187,6 +187,8 @@ class CustomTextBrowser(QTextBrowser):
         # Access the stored selected word and confirm the language is currently available
         if self.contains_english_text( self.selected_word ):
             dictionary_def = getRecords( self.selected_word )  # call the dictionary function from pydict
+            if (dictionary_def==None) or (dictionary_def==''):
+                dictionary_def="There's no definition to this word in the database. It is likely either a name, or too common to appear here."
             print(dictionary_def, type(dictionary_def))
 
             popup_window = DictionaryPopup( dictionary_def )
@@ -360,7 +362,7 @@ class MainWindow(QMainWindow):
             pixmap.loadFromData(book.cover)
             book_cover_label.setPixmap(pixmap)
             book_cover_label.setScaledContents(True)
-            book_cover_label.setFixedSize(150, 200)
+            book_cover_label.setFixedSize(110, 140)
 
             # Find the corresponding bookshelf for the author
             bookshelf_layout = bookshelves[author]
@@ -370,7 +372,7 @@ class MainWindow(QMainWindow):
             cover_button.setStyleSheet("background-color: transparent; border: none;")
             cover_button.setIcon(QIcon(pixmap))
             cover_button.setIconSize(book_cover_label.size())
-            cover_button.setFixedSize(150, 200)
+            cover_button.setFixedSize(110, 140)
 
             # Add the book cover button to the bookshelf widget
             bookshelf_widget = bookshelf_layout.itemAt(1).widget()
